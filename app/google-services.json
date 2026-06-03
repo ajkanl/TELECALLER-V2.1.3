@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "374451965506",
+    "project_id": "telecalller-pro",
+    "storage_bucket": "telecalller-pro.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:374451965506:android:91844687b9fa9aca3867db",
+        "android_client_info": {
+          "package_name": "com.aistudio.recoverypro.ndwqbx"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBnUyyJpDW5d9VFFr3lA2wjsJ2PBddyzlk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

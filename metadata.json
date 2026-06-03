@@ -1,0 +1,6 @@
+{
+  "name": "Dues Recovery",
+  "description": "Native Android app for internal Dues Recovery/Debt Collection telecallers",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
