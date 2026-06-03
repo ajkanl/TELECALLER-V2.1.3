@@ -138,7 +138,7 @@ fun DataSynchronizationSettings(
                         Box(
                             modifier = Modifier
                                 .size(40.dp)
-                                .background(Color(0xFFEFF6FF), CircleShape),
+                                .background(Color(0xFF1D2D44), CircleShape),
                             contentAlignment = Alignment.Center
                         ) {
                             Text("☁️", fontSize = 18.sp)
@@ -207,7 +207,7 @@ fun DataSynchronizationSettings(
                                 onClick = { viewModel.clearLogHistory() },
                                 colors = ButtonDefaults.outlinedButtonColors(contentColor = textSlateMuted),
                                 shape = RoundedCornerShape(8.dp),
-                                border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+                                border = BorderStroke(1.dp, Color(0xFF1E293D)),
                                 modifier = Modifier
                                     .weight(0.8f)
                                     .height(46.dp)
@@ -303,7 +303,7 @@ fun DataSynchronizationSettings(
                         Box(
                             modifier = Modifier
                                 .size(40.dp)
-                                .background(Color(0xFFEFF6FF), CircleShape),
+                                .background(Color(0xFF1D2D44), CircleShape),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
@@ -396,7 +396,7 @@ fun DataSynchronizationSettings(
                             colors = SliderDefaults.colors(
                                 thumbColor = primaryBlue,
                                 activeTrackColor = primaryBlue,
-                                inactiveTrackColor = Color(0xFFE2E8F0)
+                                inactiveTrackColor = Color(0xFF1E293D)
                             )
                         )
 
@@ -539,7 +539,7 @@ fun DataSynchronizationSettings(
                         Box(
                             modifier = Modifier
                                 .size(40.dp)
-                                .background(Color(0xFFFEF3C7), CircleShape),
+                                .background(Color(0xFFF59E0B).copy(alpha = 0.2f), CircleShape),
                             contentAlignment = Alignment.Center
                         ) {
                             Text("📤", fontSize = 18.sp)
@@ -570,7 +570,7 @@ fun DataSynchronizationSettings(
                         lineHeight = 15.sp,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .background(Color(0xFFEFF6FF), RoundedCornerShape(8.dp))
+                            .background(Color(0xFF1D2D44), RoundedCornerShape(8.dp))
                             .padding(10.dp)
                     )
 
@@ -598,14 +598,16 @@ fun DataSynchronizationSettings(
                         shape = RoundedCornerShape(12.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = primaryBlue,
-                            unfocusedBorderColor = Color(0xFFE2E8F0)
+                            unfocusedBorderColor = Color(0xFF1E293D),
+                            focusedTextColor = textSlateColor,
+                            unfocusedTextColor = textSlateColor
                         )
                     )
 
                     // Error or Success Feedback Banner
                     uploadFeedbackMessage?.let { msg ->
-                        val bannerColor = if (isUploadSuccess) Color(0xFFDCFCE7) else Color(0xFFFEE2E2)
-                        val textColor = if (isUploadSuccess) Color(0xFF15803D) else Color(0xFFB91C1C)
+                        val bannerColor = if (isUploadSuccess) Color(0xFF047857).copy(alpha = 0.15f) else Color(0xFF991B1B).copy(alpha = 0.15f)
+                        val textColor = if (isUploadSuccess) Color(0xFF34D399) else Color(0xFFFCA5A5)
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -619,7 +621,6 @@ fun DataSynchronizationSettings(
                         }
                     }
 
-                    // Multi button flow in row
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -637,10 +638,10 @@ fun DataSynchronizationSettings(
                                 isUploadSuccess = true
                             },
                             shape = RoundedCornerShape(8.dp),
-                            border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+                            border = BorderStroke(1.dp, Color(0xFF1E293D)),
                             colors = ButtonDefaults.outlinedButtonColors(contentColor = textSlateColor),
                             modifier = Modifier
-                                .weight(1f)
+                                .weight(1.5f)
                                 .height(44.dp)
                                 .testTag("btn_prefill_demo_csv")
                         ) {
@@ -651,10 +652,10 @@ fun DataSynchronizationSettings(
                         OutlinedButton(
                             onClick = { filePickerLauncher.launch("text/*") },
                             shape = RoundedCornerShape(8.dp),
-                            border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+                            border = BorderStroke(1.dp, Color(0xFF1E293D)),
                             colors = ButtonDefaults.outlinedButtonColors(contentColor = textSlateColor),
                             modifier = Modifier
-                                .weight(1f)
+                                .weight(1.5f)
                                 .height(44.dp)
                                 .testTag("btn_pick_csv_file")
                         ) {
@@ -738,7 +739,7 @@ fun DataSynchronizationSettings(
                         Box(
                             modifier = Modifier
                                 .size(40.dp)
-                                .background(Color(0xFFEFF6FF), CircleShape),
+                                .background(Color(0xFF1D2D44), CircleShape),
                             contentAlignment = Alignment.Center
                         ) {
                             Text("📥", fontSize = 18.sp)
@@ -765,8 +766,8 @@ fun DataSynchronizationSettings(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .background(Color(0xFFF8FAFC), RoundedCornerShape(12.dp))
-                            .border(1.dp, Color(0xFFF1F5F9), RoundedCornerShape(12.dp))
+                            .background(Color(0xFF1D2D44), RoundedCornerShape(12.dp))
+                            .border(1.dp, Color(0xFF1E293D), RoundedCornerShape(12.dp))
                             .padding(12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -788,8 +789,8 @@ fun DataSynchronizationSettings(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .background(Color(0xFFF8FAFC), RoundedCornerShape(12.dp))
-                            .border(1.dp, Color(0xFFF1F5F9), RoundedCornerShape(12.dp))
+                            .background(Color(0xFF1D2D44), RoundedCornerShape(12.dp))
+                            .border(1.dp, Color(0xFF1E293D), RoundedCornerShape(12.dp))
                             .padding(12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -811,8 +812,8 @@ fun DataSynchronizationSettings(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .background(Color(0xFFF8FAFC), RoundedCornerShape(12.dp))
-                            .border(1.dp, Color(0xFFF1F5F9), RoundedCornerShape(12.dp))
+                            .background(Color(0xFF1D2D44), RoundedCornerShape(12.dp))
+                            .border(1.dp, Color(0xFF1E293D), RoundedCornerShape(12.dp))
                             .padding(12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {

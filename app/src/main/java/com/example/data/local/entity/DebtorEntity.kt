@@ -32,5 +32,10 @@ data class DebtorEntity(
     val lastContactDate: String = "0 Days Ago",
     val customerSegment: String = "Standard",
     val college: String = "Default College",
-    val remarks: String = ""
+    val remarks: String = "",
+    val father: String = "",
+    val dob: String = "",
+    val course: String = "",
+    val courseSession: String = "",
+    val guardianNumber: String = ""
 )

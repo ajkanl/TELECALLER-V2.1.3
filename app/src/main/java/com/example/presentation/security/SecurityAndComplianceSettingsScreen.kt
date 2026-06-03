@@ -35,9 +35,9 @@ fun SecurityAndComplianceSettingsScreen(
     var showPurgeDialog by remember { mutableStateOf(false) }
     var purgeConfirmationText by remember { mutableStateOf("") }
 
-    val primaryBlue = Color(0xFF2563EB)
-    val textSlateColor = Color(0xFF1E293B)
-    val textSlateMuted = Color(0xFF64748B)
+    val primaryBlue = Color(0xFF3B82F6)
+    val textSlateColor = Color(0xFFF8FAFC)
+    val textSlateMuted = Color(0xFF94A3B8)
     val accentRed = Color(0xFFEF4444)
 
     Scaffold(
@@ -71,26 +71,25 @@ fun SecurityAndComplianceSettingsScreen(
                     containerColor = Color.Transparent,
                     titleContentColor = textSlateColor
                 ),
-                modifier = Modifier.border(1.dp, Color(0xFFF1F5F9))
+                modifier = Modifier.border(1.dp, Color(0xFF1E293D))
             )
         }
     ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color(0xFFF8FAFC))
+                .background(Color(0xFF090F1C))
                 .padding(innerPadding)
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // --- HEADER INFO PANEL ---
             Card(
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.Transparent),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(16.dp))
+                    .border(1.dp, Color(0xFF1E293D), RoundedCornerShape(16.dp))
             ) {
                 Row(
                     modifier = Modifier.padding(16.dp),
@@ -100,7 +99,7 @@ fun SecurityAndComplianceSettingsScreen(
                     Box(
                         modifier = Modifier
                             .size(44.dp)
-                            .background(Color(0xFFEFF6FF), RoundedCornerShape(12.dp)),
+                            .background(Color(0xFF1D2D44), RoundedCornerShape(12.dp)),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
@@ -134,13 +133,13 @@ fun SecurityAndComplianceSettingsScreen(
                 modifier = Modifier.padding(top = 8.dp)
             )
 
-            // --- 1. Debtor Number Masking Toggle ---
+            // --- 1. Debtor Contact Number Masking Toggle ---
             Card(
                 shape = RoundedCornerShape(12.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.Transparent),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(12.dp))
+                    .border(1.dp, Color(0xFF1E293D), RoundedCornerShape(12.dp))
             ) {
                 ListItem(
                     headlineContent = {
@@ -173,7 +172,7 @@ fun SecurityAndComplianceSettingsScreen(
                 colors = CardDefaults.cardColors(containerColor = Color.Transparent),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(12.dp))
+                    .border(1.dp, Color(0xFF1E293D), RoundedCornerShape(12.dp))
             ) {
                 ListItem(
                     headlineContent = {
@@ -206,7 +205,7 @@ fun SecurityAndComplianceSettingsScreen(
                 colors = CardDefaults.cardColors(containerColor = Color.Transparent),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(12.dp))
+                    .border(1.dp, Color(0xFF1E293D), RoundedCornerShape(12.dp))
             ) {
                 ListItem(
                     headlineContent = {
@@ -247,7 +246,7 @@ fun SecurityAndComplianceSettingsScreen(
                 colors = CardDefaults.cardColors(containerColor = Color.Transparent),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(12.dp))
+                    .border(1.dp, Color(0xFF1E293D), RoundedCornerShape(12.dp))
                     .testTag("theme_selection_card")
             ) {
                 Column(
@@ -297,10 +296,10 @@ fun SecurityAndComplianceSettingsScreen(
             // --- 4. Remote Emergency Data Wipe Button ---
             Card(
                 shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFFFEF2F2)),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF991B1B).copy(alpha = 0.15f)),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .border(1.dp, Color(0xFFFCA5A5), RoundedCornerShape(12.dp))
+                    .border(1.dp, Color(0xFFEF4444).copy(alpha = 0.6f), RoundedCornerShape(12.dp))
             ) {
                 Column(
                     modifier = Modifier.padding(16.dp),
@@ -322,14 +321,14 @@ fun SecurityAndComplianceSettingsScreen(
                             text = "Dangerous Operations Unit",
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFF991B1B)
+                            color = Color(0xFFFCA5A5)
                         )
                     }
 
                     Text(
                         text = "Triggering a purge instantly wipes all debtor allocations, pending agreements, cached logs, and active session logins from this hand unit offline storage.",
                         style = MaterialTheme.typography.bodySmall,
-                        color = Color(0xFF7F1D1D)
+                        color = Color(0xFFFEE2E2)
                     )
 
                     OutlinedButton(
@@ -396,7 +395,9 @@ fun SecurityAndComplianceSettingsScreen(
                         singleLine = true,
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = accentRed,
-                            unfocusedBorderColor = Color(0xFFCBD5E1)
+                            unfocusedBorderColor = Color(0xFF1E293D),
+                            focusedTextColor = textSlateColor,
+                            unfocusedTextColor = textSlateColor
                         )
                     )
                 }
@@ -431,7 +432,7 @@ fun SecurityAndComplianceSettingsScreen(
                 }
             },
             shape = RoundedCornerShape(16.dp),
-            containerColor = Color(0xFFF8FAFC)
+            containerColor = Color(0xFF172033)
         )
     }
 }

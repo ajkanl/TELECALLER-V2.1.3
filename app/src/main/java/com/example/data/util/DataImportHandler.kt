@@ -25,7 +25,12 @@ data class DebtorImportRecord(
     val totalDueAmount: Double,
     val originalDueDate: String,
     val computedDpdBucket: String,
-    val daysPastDue: Long
+    val daysPastDue: Long,
+    val father: String? = "",
+    val dob: String? = "",
+    val course: String? = "",
+    val courseSession: String? = "",
+    val college: String? = ""
 )
 
 data class ImportResult(
@@ -81,13 +86,21 @@ class DataImportHandler(
      */
     fun parseAndValidateCsvText(csvContent: String): ImportResult {
         val rawLines = csvContent.split("\r?\n".toRegex()).filter { it.isNotBlank() }
-        return parseAndValidateLines(rawLines)
+        return parseAndValidateLines(rawLines, false)
+    }
+
+    /**
+     * Parses a raw CSV String with an optional student schema mode.
+     */
+    fun parseAndValidateCsvText(csvContent: String, isStudentDbSchema: Boolean): ImportResult {
+        val rawLines = csvContent.split("\r?\n".toRegex()).filter { it.isNotBlank() }
+        return parseAndValidateLines(rawLines, isStudentDbSchema)
     }
 
     /**
      * Core line parsing, header matching, and data validation runner.
      */
-    private fun parseAndValidateLines(lines: List<String>): ImportResult {
+    private fun parseAndValidateLines(lines: List<String>, isStudentDbSchema: Boolean = false): ImportResult {
         if (lines.isEmpty()) {
             return ImportResult(0, emptyList(), listOf("The provided CSV file contains no content."))
         }
@@ -96,20 +109,41 @@ class DataImportHandler(
         val headers = parseCsvLine(headerLine)
 
         // Find Dynamic Indexes for flexible layout compatibility
-        val accountNumIdx = headers.indexOfFirst { h -> accountNumberAliases.any { it.equals(h, ignoreCase = true) } }
-        val studentNameIdx = headers.indexOfFirst { h -> studentNameAliases.any { it.equals(h, ignoreCase = true) } }
-        val primaryPhoneIdx = headers.indexOfFirst { h -> primaryPhoneAliases.any { it.equals(h, ignoreCase = true) } }
-        val altPhoneIdx = headers.indexOfFirst { h -> alternativePhoneAliases.any { it.equals(h, ignoreCase = true) } }
-        val totalDueIdx = headers.indexOfFirst { h -> totalDueAmountAliases.any { it.equals(h, ignoreCase = true) } }
-        val originalDueIdx = headers.indexOfFirst { h -> originalDueDateAliases.any { it.equals(h, ignoreCase = true) } }
+        val accountNumIdx = headers.indexOfFirst { h ->
+            val aliases = if (isStudentDbSchema) listOf("roll", "roll_number", "rollno", "roll_no", "id", "account_number", "enrollment") else accountNumberAliases
+            aliases.any { it.equals(h.trim(), ignoreCase = true) }
+        }
+        val studentNameIdx = headers.indexOfFirst { h ->
+            val aliases = if (isStudentDbSchema) listOf("name", "student_name", "student name", "student") else studentNameAliases
+            aliases.any { it.equals(h.trim(), ignoreCase = true) }
+        }
+        val primaryPhoneIdx = headers.indexOfFirst { h ->
+            val aliases = if (isStudentDbSchema) listOf("phone", "primary_phone", "mobile", "contact") else primaryPhoneAliases
+            aliases.any { it.equals(h.trim(), ignoreCase = true) }
+        }
+        val altPhoneIdx = headers.indexOfFirst { h ->
+            val aliases = if (isStudentDbSchema) listOf("parent/guardian number", "parent/guardian_number", "parent number", "guardian number", "guardian phone", "guardian_number", "alternative_phone") else alternativePhoneAliases
+            aliases.any { it.equals(h.trim(), ignoreCase = true) }
+        }
+        val totalDueIdx = headers.indexOfFirst { h -> totalDueAmountAliases.any { it.equals(h.trim(), ignoreCase = true) } }
+        val originalDueIdx = headers.indexOfFirst { h -> originalDueDateAliases.any { it.equals(h.trim(), ignoreCase = true) } }
+
+        // Student-specific fields indexes
+        val fatherIdx = headers.indexOfFirst { it.trim().equals("father", ignoreCase = true) || it.trim().equals("father_name", ignoreCase = true) || it.trim().equals("father name", ignoreCase = true) }
+        val dobIdx = headers.indexOfFirst { it.trim().equals("dob", ignoreCase = true) || it.trim().equals("date of birth", ignoreCase = true) || it.trim().equals("date_of_birth", ignoreCase = true) }
+        val collegeIdx = headers.indexOfFirst { it.trim().equals("college", ignoreCase = true) || it.trim().equals("institution", ignoreCase = true) }
+        val courseIdx = headers.indexOfFirst { it.trim().equals("course", ignoreCase = true) }
+        val courseSessionIdx = headers.indexOfFirst { it.trim().equals("course session", ignoreCase = true) || it.trim().equals("course_session", ignoreCase = true) || it.trim().equals("session", ignoreCase = true) }
 
         // Sanity check mandatory headers
         val missingHeaders = mutableListOf<String>()
-        if (accountNumIdx == -1) missingHeaders.add("account_number")
-        if (studentNameIdx == -1) missingHeaders.add("student_name")
-        if (primaryPhoneIdx == -1) missingHeaders.add("primary_phone")
-        if (totalDueIdx == -1) missingHeaders.add("total_due_amount")
-        if (originalDueIdx == -1) missingHeaders.add("original_due_date")
+        if (accountNumIdx == -1) missingHeaders.add(if (isStudentDbSchema) "Roll" else "account_number")
+        if (studentNameIdx == -1) missingHeaders.add("Name")
+        if (primaryPhoneIdx == -1) missingHeaders.add(if (isStudentDbSchema) "Phone" else "primary_phone")
+        if (!isStudentDbSchema) {
+            if (totalDueIdx == -1) missingHeaders.add("total_due_amount")
+            if (originalDueIdx == -1) missingHeaders.add("original_due_date")
+        }
 
         if (missingHeaders.isNotEmpty()) {
             return ImportResult(
@@ -130,7 +164,12 @@ class DataImportHandler(
             val lineNum = i + 1
 
             // Boundary safeguard check
-            if (row.size <= maxOf(accountNumIdx, studentNameIdx, primaryPhoneIdx, totalDueIdx, originalDueIdx)) {
+            val requiredMaxIdx = if (isStudentDbSchema) {
+                maxOf(accountNumIdx, studentNameIdx, primaryPhoneIdx)
+            } else {
+                maxOf(accountNumIdx, studentNameIdx, primaryPhoneIdx, totalDueIdx, originalDueIdx)
+            }
+            if (row.size <= requiredMaxIdx) {
                 errorsList.add("Row $lineNum: Contains incomplete column fields. Values: $row")
                 continue
             }
@@ -139,16 +178,14 @@ class DataImportHandler(
             val rawStudentName = row[studentNameIdx].trim()
             val rawPrimaryPhone = row[primaryPhoneIdx].trim()
             val rawAltPhone = if (altPhoneIdx != -1 && altPhoneIdx < row.size) row[altPhoneIdx].trim() else null
-            val rawTotalDue = row[totalDueIdx].trim()
-            val rawOriginalDueDate = row[originalDueIdx].trim()
 
             // 1. Mandatory Fields Null or Blank validation
             if (rawAccountNumber.isEmpty()) {
-                errorsList.add("Row $lineNum: Account number field sits empty.")
+                errorsList.add("Row $lineNum: Account/Roll number field sits empty.")
                 continue
             }
             if (rawStudentName.isEmpty()) {
-                errorsList.add("Row $lineNum: Account '$rawAccountNumber' is missing a student name.")
+                errorsList.add("Row $lineNum: Account '$rawAccountNumber' is missing a name.")
                 continue
             }
 
@@ -162,21 +199,55 @@ class DataImportHandler(
             // Safe normalize alternative phone (optional field)
             val normalizedAltPhone = if (!rawAltPhone.isNullOrBlank()) normalizePhoneNumber(rawAltPhone) else null
 
-            // 3. Float Parsing Total Due Amount
-            val parsedTotalDue = rawTotalDue.replace("[$,]".toRegex(), "").toDoubleOrNull()
-            if (parsedTotalDue == null || parsedTotalDue < 0) {
-                errorsList.add("Row $lineNum: Account '$rawAccountNumber' contains invalid due amount '$rawTotalDue'.")
-                continue
-            }
+            var parsedTotalDue = 0.0
+            var originalDueDateStr = "Never"
+            var computedBucket = "0 DPD"
+            var daysPastDue = 0L
 
-            // 4. Calculate Days Past Due and configure corresponding bucket
-            val dpdResult = calculateDpdBucketAndDays(rawOriginalDueDate)
-            if (dpdResult == null) {
-                errorsList.add("Row $lineNum: Account '$rawAccountNumber' includes unrecognized date format '$rawOriginalDueDate'. Supported formats (yyyy-MM-dd, dd-MM-yyyy, dd/MM/yyyy).")
-                continue
-            }
+            var fatherStr = ""
+            var dobStr = ""
+            var collegeStr = ""
+            var courseStr = ""
+            var courseSessionStr = ""
 
-            val (computedBucket, daysPastDue) = dpdResult
+            if (isStudentDbSchema) {
+                if (fatherIdx != -1 && fatherIdx < row.size) fatherStr = row[fatherIdx].trim()
+                if (dobIdx != -1 && dobIdx < row.size) dobStr = row[dobIdx].trim()
+                if (collegeIdx != -1 && collegeIdx < row.size) collegeStr = row[collegeIdx].trim()
+                if (courseIdx != -1 && courseIdx < row.size) courseStr = row[courseIdx].trim()
+                if (courseSessionIdx != -1 && courseSessionIdx < row.size) courseSessionStr = row[courseSessionIdx].trim()
+
+                dobStr = dobStr.ifBlank { "N/A" }
+                originalDueDateStr = dobStr
+            } else {
+                if (totalDueIdx < row.size) {
+                    val rawTotalDue = row[totalDueIdx].trim()
+                    val parsed = rawTotalDue.replace("[$,]".toRegex(), "").toDoubleOrNull()
+                    if (parsed == null || parsed < 0) {
+                        errorsList.add("Row $lineNum: Account '$rawAccountNumber' contains invalid due amount '$rawTotalDue'.")
+                        continue
+                    }
+                    parsedTotalDue = parsed
+                } else {
+                    errorsList.add("Row $lineNum: Missing due amount column.")
+                    continue
+                }
+
+                if (originalDueIdx < row.size) {
+                    val rawOriginalDueDate = row[originalDueIdx].trim()
+                    val dpdResult = calculateDpdBucketAndDays(rawOriginalDueDate)
+                    if (dpdResult == null) {
+                        errorsList.add("Row $lineNum: Account '$rawAccountNumber' includes unrecognized date format '$rawOriginalDueDate'.")
+                        continue
+                    }
+                    computedBucket = dpdResult.first
+                    daysPastDue = dpdResult.second
+                    originalDueDateStr = rawOriginalDueDate
+                } else {
+                    errorsList.add("Row $lineNum: Missing due date column.")
+                    continue
+                }
+            }
 
             successRecords.add(
                 DebtorImportRecord(
@@ -185,9 +256,14 @@ class DataImportHandler(
                     primaryPhone = normalizedPrimaryPhone,
                     alternativePhone = normalizedAltPhone,
                     totalDueAmount = parsedTotalDue,
-                    originalDueDate = rawOriginalDueDate,
+                    originalDueDate = originalDueDateStr,
                     computedDpdBucket = computedBucket,
-                    daysPastDue = daysPastDue
+                    daysPastDue = daysPastDue,
+                    father = fatherStr,
+                    dob = dobStr,
+                    course = courseStr,
+                    courseSession = courseSessionStr,
+                    college = collegeStr
                 )
             )
         }
@@ -376,9 +452,15 @@ class DataImportHandler(
                 contactNumber = "+91" + it.primaryPhone,
                 address = "India",
                 outstandingAmount = it.totalDueAmount,
-                lastContactDate = "Never",
+                lastContactDate = if (it.dob != "N/A" && !it.dob.isNullOrBlank()) it.dob else "Never",
                 customerSegment = if (it.totalDueAmount >= 100000.0) "High Value" else "Standard",
-                college = collegeName
+                college = if (!it.college.isNullOrBlank()) it.college else collegeName,
+                remarks = if (!it.father.isNullOrBlank()) "Father: ${it.father}" else "",
+                father = it.father ?: "",
+                dob = it.dob ?: "",
+                course = it.course ?: "",
+                courseSession = it.courseSession ?: "",
+                guardianNumber = it.alternativePhone ?: ""
             )
         }
 

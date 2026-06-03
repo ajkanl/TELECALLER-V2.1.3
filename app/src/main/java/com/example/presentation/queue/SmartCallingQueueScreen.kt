@@ -2,6 +2,8 @@ package com.example.presentation.queue
 
 import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -56,11 +58,11 @@ fun SmartCallingQueueScreen(
     var lockDialogMessage by remember { mutableStateOf("") }
 
     // Colors
-    val primaryBlue = Color(0xFF2563EB)
-    val backgroundGray = Color(0xFFF8FAFC)
-    val cardBg = Color.Transparent
-    val textPrimary = Color(0xFF1E293B)
-    val textSecondary = Color(0xFF64748B)
+    val primaryBlue = Color(0xFF3B82F6)
+    val backgroundGray = Color(0xFF090F1C)
+    val cardBg = Color(0xFF172033)
+    val textPrimary = Color(0xFFF8FAFC)
+    val textSecondary = Color(0xFF94A3B8)
     val greenStatus = Color(0xFF10B981)
     val orangeStatus = Color(0xFFF59E0B)
     val redStatus = Color(0xFFEF4444)
@@ -131,7 +133,7 @@ fun SmartCallingQueueScreen(
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             Badge(
-                                containerColor = if (selectedTab == 0) primaryBlue else Color(0xFFE2E8F0),
+                                containerColor = if (selectedTab == 0) primaryBlue else Color(0xFF1E293D),
                                 contentColor = if (selectedTab == 0) Color.White else textSecondary
                             ) {
                                 Text("${eligibleCalling.size}")
@@ -151,7 +153,7 @@ fun SmartCallingQueueScreen(
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             Badge(
-                                containerColor = if (selectedTab == 1) orangeStatus else Color(0xFFE2E8F0),
+                                containerColor = if (selectedTab == 1) orangeStatus else Color(0xFF1E293D),
                                 contentColor = if (selectedTab == 1) Color.White else textSecondary
                             ) {
                                 Text("${eligibleFollowUp.size}")
@@ -367,7 +369,7 @@ fun SmartCallingQueueScreen(
                 }
             },
             shape = RoundedCornerShape(20.dp),
-            containerColor = Color(0xFFF8FAFC)
+            containerColor = Color(0xFF172033)
         )
     }
 }
@@ -414,14 +416,15 @@ fun DebtorQueueCard(
     onCallClick: () -> Unit,
     onLockedClick: () -> Unit
 ) {
-    val progressBorderColor = if (isLocked) Color(0xFFE2E8F0) else Color(0xFFE2E8F0)
+    val progressBorderColor = if (isLocked) Color(0xFF1E293D) else Color(0xFF1E293D)
     
     Card(
         modifier = Modifier
             .fillMaxWidth()
+            .border(1.dp, Color(0xFF1E293D), RoundedCornerShape(16.dp))
             .testTag("debtor_queue_card_${debtor.id}"),
         colors = CardDefaults.cardColors(
-            containerColor = if (isLocked) Color(0xFFF1F5F9).copy(alpha = 0.6f) else Color.Transparent
+            containerColor = if (isLocked) Color(0xFF121B2D) else Color(0xFF172033)
         ),
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(
@@ -442,7 +445,7 @@ fun DebtorQueueCard(
                         text = debtor.name,
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp,
-                        color = if (isLocked) Color(0xFF94A3B8) else Color(0xFF1E293B),
+                        color = if (isLocked) Color(0xFF94A3B8) else Color(0xFFF8FAFC),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -452,8 +455,8 @@ fun DebtorQueueCard(
                         modifier = Modifier
                             .clip(RoundedCornerShape(6.dp))
                             .background(
-                                if (isLocked) Color(0xFFCBD5E1).copy(alpha = 0.3f)
-                                else if (debtor.customerSegment == "High Value") Color(0xFFFDF2F8) else Color(0xFFEFF6FF)
+                                if (isLocked) Color(0xFF1E293D)
+                                else if (debtor.customerSegment == "High Value") Color(0xFF450A0A) else Color(0xFF1E3A8A).copy(alpha = 0.5f)
                             )
                             .padding(horizontal = 6.dp, vertical = 2.dp)
                     ) {
@@ -461,7 +464,7 @@ fun DebtorQueueCard(
                             text = debtor.customerSegment,
                             fontSize = 10.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = if (isLocked) Color(0xFF94A3B8) else if (debtor.customerSegment == "High Value") Color(0xFFDB2777) else Color(0xFF2563EB)
+                            color = if (isLocked) Color(0xFF94A3B8) else if (debtor.customerSegment == "High Value") Color(0xFFF87171) else Color(0xFF60A5FA)
                         )
                     }
                 }
@@ -472,7 +475,7 @@ fun DebtorQueueCard(
                 Text(
                     text = "${formatCurrency(debtor.totalOverdueAmount)} Overdue  •  Bucket ${debtor.dpdBucket} DPD",
                     fontSize = 13.sp,
-                    color = if (isLocked) Color(0xFF94A3B8) else Color(0xFF64748B)
+                    color = if (isLocked) Color(0xFF64748B) else Color(0xFF94A3B8)
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -491,7 +494,7 @@ fun DebtorQueueCard(
                         modifier = Modifier
                             .clip(RoundedCornerShape(8.dp))
                             .background(
-                                if (isLocked) Color(0xFFE2E8F0) else Color(0xFFECFDF5)
+                                if (isLocked) Color(0xFF1E293D) else Color(0xFF022C22)
                             )
                             .padding(horizontal = 10.dp, vertical = 4.dp),
                         verticalAlignment = Alignment.CenterVertically
@@ -499,7 +502,7 @@ fun DebtorQueueCard(
                         Icon(
                             imageVector = if (isLocked) Icons.Default.Lock else Icons.Default.Info,
                             contentDescription = null,
-                            tint = if (isLocked) Color(0xFF64748B) else Color(0xFF10B981),
+                            tint = if (isLocked) Color(0xFF94A3B8) else Color(0xFF34D399),
                             modifier = Modifier.size(13.dp)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
@@ -507,7 +510,7 @@ fun DebtorQueueCard(
                             text = lastCallText,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
-                            color = if (isLocked) Color(0xFF64748B) else Color(0xFF047857)
+                            color = if (isLocked) Color(0xFF94A3B8) else Color(0xFF34D399)
                         )
                     }
                 } else {
@@ -533,8 +536,8 @@ fun DebtorQueueCard(
                         "No Payment Timeline Configured"
                     }
 
-                    val badgeBg = if (isLocked) Color(0xFFE2E8F0) else if (followUpText == "Due Today") Color(0xFFFEF3C7) else Color(0xFFFFF7ED)
-                    val badgeTint = if (isLocked) Color(0xFF64748B) else if (followUpText == "Due Today") Color(0xFFD97706) else Color(0xFFEA580C)
+                    val badgeBg = if (isLocked) Color(0xFF1E293D) else if (followUpText == "Due Today") Color(0xFF452B03) else Color(0xFF3B1E08)
+                    val badgeTint = if (isLocked) Color(0xFF94A3B8) else if (followUpText == "Due Today") Color(0xFFFBBF24) else Color(0xFFFB923C)
 
                     Row(
                         modifier = Modifier

@@ -26,14 +26,82 @@ import javax.inject.Singleton
 @Singleton
 class DebtorRepositoryImpl @Inject constructor(
     private val debtorDao: DebtorDao,
-    private val callLogDao: CallLogDao
+    private val callLogDao: CallLogDao,
+    private val collectionDao: com.example.data.local.dao.CollectionDao
 ) : DebtorRepository {
 
     private val dailyProgress = MutableStateFlow(Pair(0, 50))
     private val recoveredAmount = MutableStateFlow(0.0)
 
     init {
-        // Safe empty: No pre-population of demo data for deployment to maintain user's clean importing state
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val existing = debtorDao.getAllDebtors().first()
+                if (existing.isEmpty()) {
+                    val csvText = """
+HIMANSHU BHARDWAJ;AKHILESH SINGH;2003-06-23;;GNM;2024-2027;5;8448522928;8448522928
+Sachin Mallick;Jityendra Mallick;2001-02-05;;GNM;2024-2027;0;8908099089;8908099089
+test new;tesyy;2020-06-09;;GNM;2024-2027;0;8787878787;8787878787
+test;Uday Singh;2002-01-01;;GNM;2024-2027;2;8908990890;8089789789
+Archna Singh;DP SINGH;2001-01-28;;GNM;2024-2027;123123;;8779878978
+Sarthak Kumar;Uday Singh;2002-01-05;;GNM;2024-2027;232;8908990890;7897897887
+vaibhav khatri;Satish;2005-12-16;;GNM;2024-2027;83;8798598678;8295382085
+                    """.trimIndent()
+                    
+                    val lines = csvText.split("\n")
+                    val entities = mutableListOf<DebtorEntity>()
+                    for (line in lines) {
+                        val trimmed = line.trim()
+                        if (trimmed.isEmpty()) continue
+                        val tokens = trimmed.split(";")
+                        if (tokens.size < 9) continue
+                        val name = tokens[0].trim()
+                        val father = tokens[1].trim()
+                        val dob = tokens[2].trim()
+                        val college = tokens[3].trim().ifBlank { "Default College" }
+                        val course = tokens[4].trim()
+                        val courseSession = tokens[5].trim()
+                        val rollStr = tokens[6].trim()
+                        val parentNum = tokens[7].trim()
+                        val phone = tokens[8].trim()
+                        
+                        val id = if (rollStr != "0" && rollStr.isNotEmpty()) rollStr else "R-${phone}"
+                        
+                        val entity = DebtorEntity(
+                            id = id,
+                            name = name,
+                            phoneNumber = "+91" + phone,
+                            alternativeNumber = if (parentNum.isNotEmpty()) "+91" + parentNum else null,
+                            totalOverdueAmount = 15000.0,
+                            principalAmount = 15000.0,
+                            dpdBucket = "1-30",
+                            allocationDate = System.currentTimeMillis(),
+                            currentStatus = "PENDING",
+                            contactNumber = "+91" + phone,
+                            address = "Default Address",
+                            outstandingAmount = 15000.0,
+                            lastContactDate = dob.ifBlank { "Never" },
+                            customerSegment = "Standard",
+                            college = college,
+                            remarks = if (father.isNotEmpty()) "Father: $father" else "",
+                            father = father,
+                            dob = dob,
+                            course = course,
+                            courseSession = courseSession,
+                            guardianNumber = parentNum
+                        )
+                        entities.add(entity)
+                    }
+                    
+                    if (entities.isNotEmpty()) {
+                        debtorDao.insertDebtors(entities)
+                        collectionDao.insertOrUpdateDebtors(entities)
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("DebtorRepositoryImpl", "Verification or initialization seeding failed", e)
+            }
+        }
     }
 
     override fun getDebtors(): Flow<List<Debtor>> {
@@ -49,7 +117,12 @@ class DebtorRepositoryImpl @Inject constructor(
                     address = entity.address,
                     lastContactDate = entity.lastContactDate,
                     college = entity.college,
-                    remarks = entity.remarks
+                    remarks = entity.remarks,
+                    father = entity.father,
+                    dob = entity.dob,
+                    course = entity.course,
+                    courseSession = entity.courseSession,
+                    guardianNumber = entity.guardianNumber
                 )
             }
         }
@@ -127,6 +200,7 @@ class DebtorRepositoryImpl @Inject constructor(
         if (currentDebtor != null) {
             val updated = currentDebtor.copy(lastContactDate = "0 Days Ago")
             debtorDao.updateDebtor(updated)
+            collectionDao.insertOrUpdateDebtors(listOf(updated))
         }
     }
 
@@ -135,11 +209,12 @@ class DebtorRepositoryImpl @Inject constructor(
     override fun getDailyRecoveredAmount(): Flow<Double> = recoveredAmount
 
     override suspend fun updateDebtor(debtor: Debtor) {
+        val resolvedId = if (debtor.id.isBlank()) "STU-${System.currentTimeMillis()}" else debtor.id
         val entity = DebtorEntity(
-            id = debtor.id,
+            id = resolvedId,
             name = debtor.name,
             phoneNumber = debtor.phoneNumber,
-            alternativeNumber = null,
+            alternativeNumber = if (debtor.guardianNumber.isNotBlank()) debtor.guardianNumber else null,
             totalOverdueAmount = debtor.outstandingAmount,
             principalAmount = debtor.outstandingAmount * 0.9,
             dpdBucket = "1-30",
@@ -150,10 +225,22 @@ class DebtorRepositoryImpl @Inject constructor(
             outstandingAmount = debtor.outstandingAmount,
             lastContactDate = debtor.lastContactDate,
             customerSegment = debtor.customerSegment,
-            college = debtor.college,
-            remarks = debtor.remarks
+            college = debtor.college.ifBlank { "Unmapped" },
+            remarks = debtor.remarks,
+            father = debtor.father,
+            dob = debtor.dob,
+            course = debtor.course,
+            courseSession = debtor.courseSession,
+            guardianNumber = debtor.guardianNumber
         )
-        debtorDao.updateDebtor(entity)
+        val list = debtorDao.getAllDebtors().first()
+        val exists = list.any { it.id == resolvedId }
+        if (exists) {
+            debtorDao.updateDebtor(entity)
+        } else {
+            debtorDao.insertDebtor(entity)
+        }
+        collectionDao.insertOrUpdateDebtors(listOf(entity))
     }
 
     override fun getCallLogsForDebtor(debtorId: String): Flow<List<CallRecord>> {
@@ -212,6 +299,7 @@ class DebtorRepositoryImpl @Inject constructor(
         if (currentDebtor != null) {
             val updated = currentDebtor.copy(lastContactDate = "0 Days Ago")
             debtorDao.updateDebtor(updated)
+            collectionDao.insertOrUpdateDebtors(listOf(updated))
         }
     }
 }

@@ -293,7 +293,7 @@ fun HomeScreen(
                                             .height(6.dp)
                                             .clip(CircleShape),
                                         color = primaryBlue,
-                                        trackColor = Color(0xFFF1F5F9),
+                                        trackColor = Color.White.copy(alpha = 0.15f),
                                     )
                                 }
                             }
@@ -301,11 +301,11 @@ fun HomeScreen(
                             // "Recovered" Bento Box (Column Right)
                             Card(
                                 shape = RoundedCornerShape(24.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color(0xFFECFDF5)),
+                                colors = CardDefaults.cardColors(containerColor = Color(0xFF064E3B).copy(alpha = 0.4f)),
                                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
                                 modifier = Modifier
                                     .weight(1f)
-                                    .border(1.dp, Color(0xFFD1FAE5), RoundedCornerShape(24.dp))
+                                    .border(1.dp, Color(0xFF047857).copy(alpha = 0.7f), RoundedCornerShape(24.dp))
                                     .padding(4.dp)
                             ) {
                                 Column(
@@ -316,21 +316,21 @@ fun HomeScreen(
                                         text = "RECOVERED",
                                         fontSize = 10.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = Color(0xFF047857)
+                                        color = Color(0xFF34D399)
                                     )
                                     Spacer(modifier = Modifier.height(12.dp))
                                     Text(
                                         text = "₹${"%.2f".format(recoveredAmount / 100000.0)}L",
                                         fontSize = 26.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = Color(0xFF065F46)
+                                        color = Color.White
                                     )
                                     Spacer(modifier = Modifier.height(10.dp))
                                     Text(
                                         text = "↑ 12% vs yest.",
                                         fontSize = 11.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = Color(0xFF059669)
+                                        color = Color(0xFF34D399)
                                     )
                                 }
                             }
@@ -842,6 +842,124 @@ fun HomeScreen(
                             }
                         }
                     }
+
+                    // --- 6. AGENT STATUS CARD (BENTO SECTION) ---
+                    item {
+                        val nonDisabledAgents = remember(telecallersList) {
+                            telecallersList.filter { !it.isDisabled }
+                        }
+                        
+                        Card(
+                            shape = RoundedCornerShape(24.dp),
+                            colors = CardDefaults.cardColors(containerColor = cardBackgroundColor),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 12.dp)
+                                .border(1.dp, cardBorderColor, RoundedCornerShape(24.dp))
+                                .testTag("agent_status_bento_card")
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(18.dp),
+                                verticalArrangement = Arrangement.spacedBy(14.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(36.dp)
+                                                .background(primaryBlue.copy(alpha = 0.15f), RoundedCornerShape(10.dp)),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.AccountCircle,
+                                                contentDescription = "Agents",
+                                                tint = primaryBlue,
+                                                modifier = Modifier.size(18.dp)
+                                            )
+                                        }
+                                        Spacer(modifier = Modifier.width(12.dp))
+                                        Column {
+                                            Text(
+                                                text = "Agent Operational Status",
+                                                fontSize = 13.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = textSlateColor
+                                            )
+                                            Text(
+                                                text = "${nonDisabledAgents.filter { it.isOnline }.size} active / ${nonDisabledAgents.filter { !it.isOnline }.size} inactive",
+                                                fontSize = 10.sp,
+                                                color = textSlateMuted
+                                            )
+                                        }
+                                    }
+                                }
+
+                                if (nonDisabledAgents.isEmpty()) {
+                                    Text(
+                                        text = "No agents configured in policy settings.",
+                                        fontSize = 11.sp,
+                                        color = textSlateMuted,
+                                        modifier = Modifier.padding(vertical = 4.dp)
+                                    )
+                                } else {
+                                    Column(
+                                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        nonDisabledAgents.forEach { agent ->
+                                            Row(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .background(Color.Black.copy(alpha = 0.15f), RoundedCornerShape(12.dp))
+                                                    .border(1.dp, cardBorderColor.copy(alpha = 0.4f), RoundedCornerShape(12.dp))
+                                                    .padding(10.dp),
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.SpaceBetween
+                                            ) {
+                                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                                    // Status indicator circle
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .size(12.dp)
+                                                            .background(
+                                                                if (agent.isOnline) Color(0xFF10B981) else Color(0xFF64748B),
+                                                                CircleShape
+                                                            )
+                                                    )
+                                                    Spacer(modifier = Modifier.width(10.dp))
+                                                    Text(
+                                                        text = agent.name,
+                                                        fontSize = 12.sp,
+                                                        fontWeight = FontWeight.Bold,
+                                                        color = textSlateColor
+                                                    )
+                                                }
+                                                
+                                                Box(
+                                                    modifier = Modifier
+                                                        .clip(RoundedCornerShape(6.dp))
+                                                        .background(
+                                                            if (agent.isOnline) Color(0xFF047857).copy(alpha = 0.2f) else Color(0xFF334155).copy(alpha = 0.2f)
+                                                        )
+                                                        .padding(horizontal = 8.dp, vertical = 2.dp)
+                                                ) {
+                                                    Text(
+                                                        text = if (agent.isOnline) "Active" else "Inactive",
+                                                        fontSize = 9.sp,
+                                                        fontWeight = FontWeight.Bold,
+                                                        color = if (agent.isOnline) Color(0xFF34D399) else Color(0xFF94A3B8)
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             } else if (activeTab == "Queue") {
                 val filteredQueueDebtors = remember(debtors, queueSearchQuery) {
@@ -863,71 +981,46 @@ fun HomeScreen(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     item {
-                        Text(
-                            text = "Debtor Collection Queue",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = textSlateColor
-                        )
-                        Text(
-                            text = "Tap on any debtor account below to edit profile parameters and register historical call notes.",
-                            fontSize = 11.sp,
-                            color = textSlateMuted,
-                            modifier = Modifier.padding(top = 4.dp, bottom = 12.dp)
-                        )
-                    }
-
-                    item {
-                        Row(
+                        Card(
+                            shape = RoundedCornerShape(20.dp),
+                            colors = CardDefaults.cardColors(containerColor = cardBackgroundColor),
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(bottom = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                .border(1.dp, cardBorderColor, RoundedCornerShape(20.dp))
                         ) {
-                            OutlinedTextField(
-                                value = queueSearchQuery,
-                                onValueChange = { queueSearchQuery = it },
-                                placeholder = { Text("Search debtors by name, phone...", fontSize = 13.sp, color = textSlateMuted) },
-                                leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search", tint = textSlateMuted) },
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .testTag("queue_search_field"),
-                                shape = RoundedCornerShape(12.dp),
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedContainerColor = cardBackgroundColor,
-                                    unfocusedContainerColor = cardBackgroundColor,
-                                    focusedBorderColor = primaryBlue,
-                                    unfocusedBorderColor = cardBorderColor,
-                                    focusedTextColor = textSlateColor,
-                                    unfocusedTextColor = textSlateColor
-                                ),
-                                singleLine = true
-                            )
-
-                            // Default dialing application button
-                            IconButton(
-                                onClick = {
-                                    try {
-                                        val dialIntent = android.content.Intent(android.content.Intent.ACTION_DIAL).apply {
-                                            data = android.net.Uri.parse("tel:")
-                                        }
-                                        context.startActivity(dialIntent)
-                                    } catch (e: Exception) {
-                                        Toast.makeText(context, "No dialer application found", Toast.LENGTH_SHORT).show()
-                                    }
-                                },
-                                modifier = Modifier
-                                    .size(50.dp)
-                                    .clip(RoundedCornerShape(12.dp))
-                                    .background(primaryBlue)
-                                    .testTag("queue_direct_dial_button")
+                            Column(
+                                modifier = Modifier.padding(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(10.dp)
                             ) {
-                                Icon(
-                                    imageVector = Icons.Default.Call,
-                                    contentDescription = "Open Dialer",
-                                    tint = Color.White,
-                                    modifier = Modifier.size(22.dp)
+                                Text(
+                                    text = "Debtor Collection Queue",
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = textSlateColor
+                                )
+                                Text(
+                                    text = "Tap on any debtor account below to edit profile parameters and register historical call notes.",
+                                    fontSize = 11.sp,
+                                    color = textSlateMuted
+                                )
+                                OutlinedTextField(
+                                    value = queueSearchQuery,
+                                    onValueChange = { queueSearchQuery = it },
+                                    placeholder = { Text("Search debtors by name, phone...", fontSize = 13.sp, color = textSlateMuted) },
+                                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search", tint = textSlateMuted) },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .testTag("queue_search_field"),
+                                    shape = RoundedCornerShape(12.dp),
+                                    colors = OutlinedTextFieldDefaults.colors(
+                                        focusedContainerColor = backgroundColor,
+                                        unfocusedContainerColor = backgroundColor,
+                                        focusedBorderColor = primaryBlue,
+                                        unfocusedBorderColor = cardBorderColor,
+                                        focusedTextColor = textSlateColor,
+                                        unfocusedTextColor = textSlateColor
+                                    ),
+                                    singleLine = true
                                 )
                             }
                         }
@@ -989,18 +1082,43 @@ fun HomeScreen(
                                             fontWeight = FontWeight.Bold,
                                             color = textSlateColor
                                         )
-                                        Spacer(modifier = Modifier.height(4.dp))
-                                        Box(
-                                            modifier = Modifier
-                                                .background(Color(0xFFEFF6FF), RoundedCornerShape(8.dp))
-                                                .padding(horizontal = 8.dp, vertical = 4.dp)
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                                         ) {
-                                            Text(
-                                                text = "Edit Profile",
-                                                fontSize = 9.sp,
-                                                fontWeight = FontWeight.Bold,
-                                                color = primaryBlue
-                                            )
+                                            Box(
+                                                modifier = Modifier
+                                                    .background(Color(0xFFEFF6FF), RoundedCornerShape(8.dp))
+                                                    .clickable { viewModel.selectDebtor(debtor) }
+                                                    .padding(horizontal = 8.dp, vertical = 4.dp)
+                                            ) {
+                                                Text(
+                                                    text = "Edit Profile",
+                                                    fontSize = 9.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = primaryBlue
+                                                )
+                                            }
+
+                                            IconButton(
+                                                onClick = {
+                                                    viewModel.initiateCall(debtor)
+                                                    viewModel.selectDebtor(debtor)
+                                                },
+                                                modifier = Modifier
+                                                    .size(28.dp)
+                                                    .clip(CircleShape)
+                                                    .background(Color(0xFF10B981))
+                                                    .testTag("dialer_button_student_${debtor.id}")
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.Call,
+                                                    contentDescription = "Call Student",
+                                                    tint = Color.White,
+                                                    modifier = Modifier.size(12.dp)
+                                                )
+                                            }
                                         }
                                     }
                                 }
@@ -1807,6 +1925,7 @@ fun PriorityBentoBox(
     onMaskNumber: (String) -> String
 ) {
     val highlightColor = Color(0xFF2563EB)
+    var selectedTab by remember { mutableStateOf("task") }
 
     val debtor = activeCallDebtor ?: debtors.firstOrNull() ?: Debtor("0", "Aditya Vardhan", 12, 84250.0, "High Value", "+919876543210", "42, Sector 5, Bangalore", "Never Contacted")
 
@@ -1819,91 +1938,47 @@ fun PriorityBentoBox(
             .testTag("priority_follow_up_card")
     ) {
         Column(
-            modifier = Modifier.padding(20.dp)
+            modifier = Modifier.padding(18.dp)
         ) {
+            // Only show navigation tabs if NOT in an active dialing session!
             if (!isDialing) {
-                // --- DEFAULT IDLE FOLLOW-UP VIEW ---
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.Top
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(Color.White.copy(alpha = 0.12f))
+                        .padding(3.dp),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    Column {
-                        Text(
-                            text = "PRIORITY FOLLOW-UP",
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFFDBEAFE),
-                            letterSpacing = 0.5.sp
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = debtor.name,
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White
-                        )
-                        Text(
-                            text = "#${debtor.id} • Overdue ${debtor.overdueDays} Days",
-                            fontSize = 12.sp,
-                            color = Color(0xFFBFDBFE)
-                        )
-                    }
-                    Box(
-                        modifier = Modifier
-                            .background(Color.White.copy(alpha = 0.2f), RoundedCornerShape(12.dp))
-                            .padding(horizontal = 10.dp, vertical = 4.dp)
-                    ) {
-                        Text(
-                            text = debtor.customerSegment,
-                            fontSize = 9.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column {
-                        Text(
-                            text = "OUTSTANDING",
-                            fontSize = 9.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFFBFDBFE)
-                        )
-                        Text(
-                            text = "₹${"%,.2f".format(debtor.outstandingAmount)}",
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White,
-                            fontFamily = FontFamily.SansSerif
-                        )
-                    }
-                    Button(
-                        onClick = { onCallInitiated(debtor) },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.White.copy(alpha = 0.2f)),
-                        shape = RoundedCornerShape(16.dp),
-                        modifier = Modifier
-                            .height(44.dp)
-                            .testTag("call_now_button")
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                    val tabs = listOf(
+                        "task" to "🎯 Active Call",
+                        "metrics" to "📈 Portfolio",
+                        "sync" to "🛡️ System Sync"
+                    )
+                    tabs.forEach { (tabId, label) ->
+                        val isSelected = selectedTab == tabId
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(if (isSelected) Color.White.copy(alpha = 0.35f) else Color.Transparent)
+                                .clickable { selectedTab = tabId }
+                                .padding(vertical = 6.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
                             Text(
-                                text = "Call Now",
-                                color = Color.White,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 13.sp
+                                text = label,
+                                fontSize = 11.sp,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                color = Color.White
                             )
                         }
                     }
                 }
-            } else {
+                Spacer(modifier = Modifier.height(18.dp))
+            }
+
+            if (isDialing) {
                 // --- ACTIVE DIALING SEQUENCE OVERLAY ---
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -1932,6 +2007,7 @@ fun PriorityBentoBox(
                             fontWeight = FontWeight.Bold,
                             color = Color.White
                         )
+                        Spacer(modifier = Modifier.height(2.dp))
                         Text(
                             text = onMaskNumber(debtor.phoneNumber),
                             fontSize = 13.sp,
@@ -1953,9 +2029,9 @@ fun PriorityBentoBox(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(20.dp))
-                HorizontalDivider(color = Color.White.copy(alpha = 0.1f))
                 Spacer(modifier = Modifier.height(16.dp))
+                HorizontalDivider(color = Color.White.copy(alpha = 0.1f))
+                Spacer(modifier = Modifier.height(12.dp))
 
                 Text(
                     text = "Track Call Outcome:",
@@ -1991,6 +2067,269 @@ fun PriorityBentoBox(
                         Text("PTP Promised", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                     }
                 }
+            } else {
+                // --- NOT DIALING -> RENDER THE CURRENT SELECTED TAB ---
+                when (selectedTab) {
+                    "task" -> {
+                        // --- DEFAULT IDLE FOLLOW-UP VIEW ---
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.Top
+                        ) {
+                            Column {
+                                Text(
+                                    text = "PRIORITY FOLLOW-UP CONTACT",
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFFDBEAFE),
+                                    letterSpacing = 0.5.sp
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = debtor.name,
+                                    fontSize = 24.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White
+                                )
+                                Text(
+                                    text = "#${debtor.id} • Overdue ${debtor.overdueDays} Days",
+                                    fontSize = 12.sp,
+                                    color = Color(0xFFBFDBFE)
+                                )
+                            }
+                            Box(
+                                modifier = Modifier
+                                    .background(Color.White.copy(alpha = 0.2f), RoundedCornerShape(12.dp))
+                                    .padding(horizontal = 10.dp, vertical = 4.dp)
+                            ) {
+                                Text(
+                                    text = debtor.customerSegment,
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(20.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column {
+                                Text(
+                                    text = "OUTSTANDING AMOUNT",
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFFBFDBFE)
+                                )
+                                Text(
+                                    text = "₹${"%,.2f".format(debtor.outstandingAmount)}",
+                                    fontSize = 20.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White,
+                                    fontFamily = FontFamily.SansSerif
+                                )
+                            }
+                            Button(
+                                onClick = { onCallInitiated(debtor) },
+                                colors = ButtonDefaults.buttonColors(containerColor = Color.White.copy(alpha = 0.2f)),
+                                shape = RoundedCornerShape(16.dp),
+                                modifier = Modifier
+                                    .height(44.dp)
+                                    .testTag("call_now_button")
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        text = "Call Now",
+                                        color = Color.White,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 13.sp
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    "metrics" -> {
+                        // --- LIVE PORTFOLIO DASHBOARD METRICS ---
+                        val totalDebtors = debtors.size
+                        val totalOutstanding = debtors.sumOf { it.outstandingAmount }
+                        val totalHighValueOutstanding = debtors.filter { it.customerSegment.contains("High", ignoreCase = true) }.sumOf { it.outstandingAmount }
+                        val averageDaysInArrears = if (debtors.isNotEmpty()) debtors.map { it.overdueDays }.average().toInt() else 0
+
+                        Column(modifier = Modifier.fillMaxWidth()) {
+                            Text(
+                                text = "LIVE ALLOCATED PORTFOLIO SUMMARY",
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFFDBEAFE),
+                                letterSpacing = 0.5.sp
+                            )
+                            Spacer(modifier = Modifier.height(10.dp))
+                            
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = "TOTAL PORTFOLIO DEBT",
+                                        fontSize = 9.sp,
+                                        color = Color(0xFFBFDBFE),
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Text(
+                                        text = "₹${"%,.2f".format(totalOutstanding)}",
+                                        fontSize = 18.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.White
+                                    )
+                                }
+                                Column(modifier = Modifier.weight(1.2f)) {
+                                    Text(
+                                        text = "HIGH VALUE CONCENTRATION",
+                                        fontSize = 9.sp,
+                                        color = Color(0xFFBFDBFE),
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Text(
+                                        text = "₹${"%,.2f".format(totalHighValueOutstanding)}",
+                                        fontSize = 18.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.White
+                                    )
+                                }
+                            }
+                            
+                            Spacer(modifier = Modifier.height(12.dp))
+                            HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text("📊", fontSize = 11.sp)
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(
+                                        text = "Allocated Accounts: $totalDebtors Students",
+                                        fontSize = 11.sp,
+                                        color = Color(0xFFDBEAFE)
+                                    )
+                                }
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text("⏳", fontSize = 11.sp)
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(
+                                        text = "Avg Delinquency: $averageDaysInArrears Days",
+                                        fontSize = 11.sp,
+                                        color = Color(0xFFDBEAFE)
+                                    )
+                                }
+                            }
+                            
+                            Spacer(modifier = Modifier.height(12.dp))
+                            
+                            // Visual Target Progress Bar
+                            Column(modifier = Modifier.fillMaxWidth()) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text(
+                                        text = "TEAM RECOVERY TARGET",
+                                        fontSize = 9.sp,
+                                        color = Color(0xFFBFDBFE),
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Text(
+                                        text = "78% Achieved",
+                                        fontSize = 9.sp,
+                                        color = Color.White,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(4.dp))
+                                LinearProgressIndicator(
+                                    progress = { 0.78f },
+                                    color = Color(0xFF34D399),
+                                    trackColor = Color.White.copy(alpha = 0.15f),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(6.dp)
+                                        .clip(RoundedCornerShape(3.dp))
+                                )
+                            }
+                        }
+                    }
+                    "sync" -> {
+                        // --- HIGH FIDELITY SYSTEM INTEGRATION & SYNC STATUS ---
+                        Column(modifier = Modifier.fillMaxWidth()) {
+                            Text(
+                                text = "SYSTEM SYNC & COMPLIANCE GATEWAY",
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFFDBEAFE),
+                                letterSpacing = 0.5.sp
+                            )
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            val syncStatusItems = listOf(
+                                "📡 Network Cellular SIM" to "SIM 1 (Cellular Gateway Online)",
+                                "🔥 Cloud Databases" to "Firewall Protected (Firestore / RTDB)",
+                                "💼 Background Processor" to "Android WorkManager Sync (Running)",
+                                "🔒 Encrypted Storage" to "SQLite Room Cache Active"
+                            )
+
+                            syncStatusItems.forEach { (label, value) ->
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 4.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = label,
+                                        fontSize = 11.sp,
+                                        color = Color(0xFFBFDBFE),
+                                        fontWeight = FontWeight.Normal
+                                    )
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(6.dp)
+                                                .background(Color(0xFF34D399), CircleShape)
+                                        )
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text(
+                                            text = value,
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color.White
+                                        )
+                                    }
+                                }
+                            }
+                            
+                            Spacer(modifier = Modifier.height(12.dp))
+                            HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            Text(
+                                text = "All inbound communication logs, recording sessions and payment agreements are replicated instantly under telecaller audit rules constraint.",
+                                fontSize = 10.sp,
+                                color = Color(0xFFDBEAFE).copy(alpha = 0.8f),
+                                lineHeight = 14.sp
+                            )
+                        }
+                    }
+                }
             }
         }
     }
@@ -2001,14 +2340,14 @@ fun RecentCallItem(call: CallRecord, textSlateColor: Color, textSlateMuted: Colo
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Color(0xFFF8FAFC), RoundedCornerShape(16.dp))
-            .border(1.dp, Color(0xFFF1F5F9), RoundedCornerShape(16.dp))
+            .background(Color(0xFF172033), RoundedCornerShape(16.dp))
+            .border(1.dp, Color(0xFF1E293D), RoundedCornerShape(16.dp))
             .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         val isPtp = call.status == "PTP Promised"
-        val statusIconColor = if (isPtp) Color(0xFF10B981) else Color(0xFFF97316)
-        val statusBgColor = if (isPtp) Color(0xFFD1FAE5) else Color(0xFFFFEDD5)
+        val statusIconColor = if (isPtp) Color(0xFF34D399) else Color(0xFFFB923C)
+        val statusBgColor = if (isPtp) Color(0xFF022C22) else Color(0xFF451A03)
 
         Box(
             modifier = Modifier

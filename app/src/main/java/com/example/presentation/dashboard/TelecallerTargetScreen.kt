@@ -43,10 +43,10 @@ fun TelecallerTargetScreen(
     var editingAgentId by remember { mutableStateOf<String?>(null) }
     var targetInputVal by remember { mutableStateOf("") }
 
-    val primaryBlue = Color(0xFF2563EB)
-    val cardBorderColor = Color(0xFFE2E8F0)
-    val textSlateColor = Color(0xFF1E293B)
-    val textSlateMuted = Color(0xFF64748B)
+    val primaryBlue = Color(0xFF3B82F6)
+    val cardBorderColor = Color(0xFF1E293D)
+    val textSlateColor = Color(0xFFF8FAFC)
+    val textSlateMuted = Color(0xFF94A3B8)
 
     val filteredTelecallers = remember(telecallers, searchQuery) {
         if (searchQuery.isBlank()) {
@@ -93,7 +93,7 @@ fun TelecallerTargetScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color(0xFFF8FAFC))
+                .background(Color(0xFF090F1C))
                 .padding(paddingValues)
                 .padding(16.dp)
         ) {
@@ -135,10 +135,10 @@ fun TelecallerTargetScreen(
                     .testTag("telecaller_target_search_field"),
                 shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = Color.Transparent,
-                    unfocusedContainerColor = Color.Transparent,
                     focusedBorderColor = primaryBlue,
-                    unfocusedBorderColor = cardBorderColor
+                    unfocusedBorderColor = cardBorderColor,
+                    focusedTextColor = textSlateColor,
+                    unfocusedTextColor = textSlateColor
                 ),
                 singleLine = true
             )
@@ -198,7 +198,7 @@ fun TelecallerTargetScreen(
                                     Box(
                                         modifier = Modifier
                                             .size(44.dp)
-                                            .background(Color(0xFFEFF6FF), CircleShape),
+                                            .background(Color(0xFF1D2D44), CircleShape),
                                         contentAlignment = Alignment.Center
                                     ) {
                                         Text(
@@ -261,7 +261,9 @@ fun TelecallerTargetScreen(
                                             singleLine = true,
                                             colors = OutlinedTextFieldDefaults.colors(
                                                 focusedBorderColor = primaryBlue,
-                                                unfocusedBorderColor = cardBorderColor
+                                                unfocusedBorderColor = cardBorderColor,
+                                                focusedTextColor = textSlateColor,
+                                                unfocusedTextColor = textSlateColor
                                             )
                                         )
 
@@ -302,7 +304,7 @@ fun TelecallerTargetScreen(
                                             .fillMaxWidth()
                                             .height(36.dp)
                                             .testTag("target_edit_trigger_${agent.id}"),
-                                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF1F5F9)),
+                                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1E293D)),
                                         shape = RoundedCornerShape(8.dp)
                                     ) {
                                         Row(

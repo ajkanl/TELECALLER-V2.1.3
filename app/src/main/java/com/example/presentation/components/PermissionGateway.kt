@@ -126,11 +126,11 @@ fun PermissionGateway(
         content()
     } else {
         // High-fidelity branded explanation Screen matching the RecoveryPro Bento Slate Theme
-        val backgroundColor = Color(0xFFF7F9FB)
-        val primaryBlue = Color(0xFF2563EB)
-        val textSlateColor = Color(0xFF1E293B)
-        val textSlateMuted = Color(0xFF64748B)
-        val cardBorderColor = Color(0xFFE2E8F0)
+        val backgroundColor = Color(0xFF090F1C)
+        val primaryBlue = Color(0xFF3B82F6)
+        val textSlateColor = Color(0xFFF8FAFC)
+        val textSlateMuted = Color(0xFF94A3B8)
+        val cardBorderColor = Color(0xFF1E293D)
 
         Box(
             modifier = Modifier
@@ -165,7 +165,7 @@ fun PermissionGateway(
                                 modifier = Modifier
                                     .size(56.dp)
                                     .clip(CircleShape)
-                                    .background(Color(0xFFEFF6FF)),
+                                    .background(Color(0xFF1E293B)),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
@@ -346,7 +346,7 @@ fun PermissionExplanationItem(
             modifier = Modifier
                 .size(36.dp)
                 .clip(RoundedCornerShape(10.dp))
-                .background(Color(0xFFF1F5F9)),
+                .background(Color(0xFF1E293B)),
             contentAlignment = Alignment.Center
         ) {
             Text(
@@ -376,7 +376,7 @@ fun PermissionExplanationItem(
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(4.dp))
-                    .background(Color(0xFFEFF6FF))
+                    .background(Color(0xFF1D2D44))
                     .padding(horizontal = 6.dp, vertical = 2.dp)
             ) {
                 Text(

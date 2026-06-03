@@ -230,6 +230,148 @@ class FirebaseSyncRepositoryImpl @Inject constructor(
                 .await()
             _syncEvents.emit("Category 6/6 Successful: Optimization rules locked.")
 
+            // --- Sync to Realtime Database (RTDB) as well ---
+            try {
+                _syncEvents.emit("RTDB: Initializing Realtime Database mirror copy synchronizer...")
+                val rtdb = com.google.firebase.database.FirebaseDatabase.getInstance("https://telecalller-pro-default-rtdb.firebaseio.com")
+                val rtdbRef = rtdb.reference
+
+                // 1. RTDB Debtors
+                _syncEvents.emit("RTDB Category 1/6: Syncing student debtors...")
+                val rtdbDebtors = mutableMapOf<String, Any>()
+                for (debtor in debtors) {
+                    rtdbDebtors[debtor.id] = mapOf(
+                        "id" to debtor.id,
+                        "name" to debtor.name,
+                        "phoneNumber" to debtor.phoneNumber,
+                        "alternativeNumber" to debtor.alternativeNumber,
+                        "totalOverdueAmount" to debtor.totalOverdueAmount,
+                        "principalAmount" to debtor.principalAmount,
+                        "dpdBucket" to debtor.dpdBucket,
+                        "allocationDate" to debtor.allocationDate,
+                        "currentStatus" to debtor.currentStatus,
+                        "contactNumber" to debtor.contactNumber,
+                        "address" to debtor.address,
+                        "outstandingAmount" to debtor.outstandingAmount,
+                        "lastContactDate" to debtor.lastContactDate,
+                        "customerSegment" to debtor.customerSegment
+                    )
+                }
+                if (rtdbDebtors.isNotEmpty()) {
+                    rtdbRef.child("debtors").setValue(rtdbDebtors).await()
+                } else {
+                    rtdbRef.child("debtors").child("_welcome_placeholder_").setValue(
+                        mapOf(
+                            "info" to "Collection initialized successfully. Awaiting localized client portfolios.",
+                            "status" to "ACTIVE",
+                            "updatedAt" to System.currentTimeMillis()
+                        )
+                    ).await()
+                }
+
+                // 2. RTDB Call Logs
+                _syncEvents.emit("RTDB Category 2/6: Syncing communication logs...")
+                val rtdbCallLogs = mutableMapOf<String, Any>()
+                for (log in callLogs) {
+                    rtdbCallLogs[log.id] = mapOf(
+                        "id" to log.id,
+                        "callId" to log.callId,
+                        "debtorId" to log.debtorId,
+                        "callTimestamp" to log.callTimestamp,
+                        "durationSeconds" to log.durationSeconds,
+                        "callType" to log.callType,
+                        "callDisposition" to log.callDisposition,
+                        "agentNotes" to log.agentNotes,
+                        "recordingFilePath" to log.recordingFilePath,
+                        "date" to log.date,
+                        "time" to log.time,
+                        "outcome" to log.outcome,
+                        "notes" to log.notes
+                    )
+                }
+                if (rtdbCallLogs.isNotEmpty()) {
+                    rtdbRef.child("call_logs").setValue(rtdbCallLogs).await()
+                } else {
+                    rtdbRef.child("call_logs").child("_welcome_placeholder_").setValue(
+                        mapOf(
+                            "info" to "Collection initialized successfully. Awaiting communication and disposition recordings.",
+                            "status" to "EMPTY",
+                            "updatedAt" to System.currentTimeMillis()
+                        )
+                    ).await()
+                }
+
+                // 3. RTDB Promises to Pay
+                _syncEvents.emit("RTDB Category 3/6: Syncing payment promises...")
+                val rtdbPromises = mutableMapOf<String, Any>()
+                for (ptp in promises) {
+                    rtdbPromises[ptp.ptpId.toString()] = mapOf(
+                        "ptpId" to ptp.ptpId,
+                        "debtorId" to ptp.debtorId,
+                        "ptpCreationTimestamp" to ptp.ptpCreationTimestamp,
+                        "promisedPaymentDate" to ptp.promisedPaymentDate,
+                        "promisedAmount" to ptp.promisedAmount,
+                        "ptpStatus" to ptp.ptpStatus
+                    )
+                }
+                if (rtdbPromises.isNotEmpty()) {
+                    rtdbRef.child("promises_to_pay").setValue(rtdbPromises).await()
+                } else {
+                    rtdbRef.child("promises_to_pay").child("_welcome_placeholder_").setValue(
+                        mapOf(
+                            "info" to "Collection initialized successfully. Awaiting payment commitments.",
+                            "status" to "EMPTY",
+                            "updatedAt" to System.currentTimeMillis()
+                        )
+                    ).await()
+                }
+
+                // 4. RTDB Telecallers
+                _syncEvents.emit("RTDB Category 4/6: Syncing telecaller matrix...")
+                val rtdbAgents = mutableMapOf<String, Any>()
+                for (agent in agents) {
+                    rtdbAgents[agent.id] = mapOf(
+                        "id" to agent.id,
+                        "name" to agent.name,
+                        "isOnline" to agent.isOnline,
+                        "callsDialed" to agent.callsDialed,
+                        "talkTimeMinutes" to agent.talkTimeMinutes,
+                        "ptpsSecured" to agent.ptpsSecured,
+                        "permissions" to mapOf(
+                            "callInitiation" to agent.permissions.callInitiation,
+                            "canSeeFullNumbers" to agent.permissions.canSeeFullNumbers,
+                            "canPerformPurge" to agent.permissions.canPerformPurge,
+                            "canRecordAudio" to agent.permissions.canRecordAudio,
+                            "isAdmin" to agent.permissions.isAdmin
+                        )
+                    )
+                }
+                if (rtdbAgents.isNotEmpty()) {
+                    rtdbRef.child("telecallers").setValue(rtdbAgents).await()
+                } else {
+                    rtdbRef.child("telecallers").child("_welcome_placeholder_").setValue(
+                        mapOf(
+                            "info" to "Collection initialized successfully. Awaiting caller profile allocation matrix tables.",
+                            "status" to "EMPTY",
+                            "updatedAt" to System.currentTimeMillis()
+                        )
+                    ).await()
+                }
+
+                // 5. RTDB Security Settings
+                _syncEvents.emit("RTDB Category 5/6: Syncing security compliance policies...")
+                rtdbRef.child("security_settings_audit").child("current_policies").setValue(securitySettings).await()
+
+                // 6. RTDB Sync Settings
+                _syncEvents.emit("RTDB Category 6/6: Syncing system configurations...")
+                rtdbRef.child("sync_settings_audit").child("current_criteria").setValue(syncSettings).await()
+
+                _syncEvents.emit("RTDB Success: All mirroring databases uploaded and confirmed.")
+            } catch (rtdbEx: Exception) {
+                _syncEvents.emit("RTDB Warning: Mirror check skipped/failed -> ${rtdbEx.localizedMessage}")
+                android.util.Log.e("FirebaseSync", "Failed to sync to Realtime Database: ${rtdbEx.message}", rtdbEx)
+            }
+
             _syncEvents.emit("SUCCESS: Category-wise Cloud Sync finished perfectly!")
             true
         } catch (e: Exception) {

@@ -5,14 +5,17 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
@@ -24,6 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -34,6 +38,136 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
+fun SunsetMountainBackdrop(modifier: Modifier = Modifier) {
+    Canvas(modifier = modifier.fillMaxSize()) {
+        val width = size.width
+        val height = size.height
+
+        // 1. Draw elegant orange-salmon-rose sky sunset gradient
+        val skyGradient = Brush.verticalGradient(
+            0.0f to Color(0xFF131A26),       // Top cosmic darkness
+            0.35f to Color(0xFF28364B),      // Dark slate blue
+            0.55f to Color(0xFF9E4E63),      // Sunset rose
+            0.70f to Color(0xFFEBC1B0),      // Coral/peach horizon
+            1.0f to Color(0xFF131A26)        // Blends smoothly to solid bottom
+        )
+        drawRect(brush = skyGradient)
+
+        // 2. Draw soft glowing sunset sun offset right
+        val sunCenterY = height * 0.45f
+        val sunCenterX = width * 0.75f
+        val sunRadius = width * 0.22f
+        drawCircle(
+            brush = Brush.radialGradient(
+                colors = listOf(
+                    Color(0xFFFFF3DB).copy(alpha = 0.85f),
+                    Color(0xFFFFDFBF).copy(alpha = 0.35f),
+                    Color(0x00FFDFBF)
+                ),
+                center = androidx.compose.ui.geometry.Offset(sunCenterX, sunCenterY),
+                radius = sunRadius
+            ),
+            radius = sunRadius,
+            center = androidx.compose.ui.geometry.Offset(sunCenterX, sunCenterY)
+        )
+
+        // 3. BACK MOUNTAIN RANGE (Rose-Gold Silhouettes)
+        val backMountainPath = Path().apply {
+            moveTo(0f, height * 0.75f)
+            lineTo(width * 0.25f, height * 0.58f)
+            lineTo(width * 0.48f, height * 0.69f)
+            lineTo(width * 0.72f, height * 0.52f)
+            lineTo(width * 0.90f, height * 0.64f)
+            lineTo(width, height * 0.56f)
+            lineTo(width, height)
+            lineTo(0f, height)
+            close()
+        }
+        drawPath(
+            path = backMountainPath,
+            color = Color(0xFF7A515B)
+        )
+        
+        // Back Snowy highlights on peak ridges (illuminated side of peaks in warm light)
+        val backHighlights = Path().apply {
+            moveTo(width * 0.25f, height * 0.58f)
+            lineTo(width * 0.32f, height * 0.62f)
+            lineTo(width * 0.28f, height * 0.64f)
+            lineTo(width * 0.25f, height * 0.58f)
+            
+            moveTo(width * 0.72f, height * 0.52f)
+            lineTo(width * 0.80f, height * 0.57f)
+            lineTo(width * 0.75f, height * 0.60f)
+            lineTo(width * 0.72f, height * 0.52f)
+        }
+        drawPath(path = backHighlights, color = Color(0xFFFFECE3).copy(alpha = 0.35f))
+
+        // 4. MID MOUNTAIN RANGE (Deep Rust-Purple)
+        val midMountainPath = Path().apply {
+            moveTo(0f, height * 0.82f)
+            lineTo(width * 0.18f, height * 0.67f)
+            lineTo(width * 0.38f, height * 0.74f)
+            lineTo(width * 0.55f, height * 0.62f)
+            lineTo(width * 0.78f, height * 0.73f)
+            lineTo(width * 0.92f, height * 0.66f)
+            lineTo(width, height * 0.75f)
+            lineTo(width, height)
+            lineTo(0f, height)
+            close()
+        }
+        drawPath(
+            path = midMountainPath,
+            color = Color(0xFF422B3F)
+        )
+        
+        val midHighlights = Path().apply {
+            moveTo(width * 0.18f, height * 0.67f)
+            lineTo(width * 0.26f, height * 0.70f)
+            lineTo(width * 0.22f, height * 0.73f)
+            lineTo(width * 0.18f, height * 0.67f)
+
+            moveTo(width * 0.55f, height * 0.62f)
+            lineTo(width * 0.64f, height * 0.66f)
+            lineTo(width * 0.59f, height * 0.69f)
+            lineTo(width * 0.55f, height * 0.62f)
+        }
+        drawPath(path = midHighlights, color = Color(0xFFFFDCD0).copy(alpha = 0.4f))
+
+        // 5. FORE RANGE (Dark Navy Charcoal Peaks cover bottom)
+        val foreMountainPath = Path().apply {
+            moveTo(0f, height * 0.88f)
+            lineTo(width * 0.12f, height * 0.76f)
+            lineTo(width * 0.32f, height * 0.80f)
+            lineTo(width * 0.48f, height * 0.70f)
+            lineTo(width * 0.65f, height * 0.78f)
+            lineTo(width * 0.82f, height * 0.68f)
+            lineTo(width * 0.95f, height * 0.77f)
+            lineTo(width, height * 0.70f)
+            lineTo(width, height)
+            lineTo(0f, height)
+            close()
+        }
+        drawPath(
+            path = foreMountainPath,
+            color = Color(0xFF1B1B2A)
+        )
+        
+        val foreHighlights = Path().apply {
+            moveTo(width * 0.48f, height * 0.70f)
+            lineTo(width * 0.55f, height * 0.74f)
+            lineTo(width * 0.51f, height * 0.77f)
+            lineTo(width * 0.48f, height * 0.70f)
+
+            moveTo(width * 0.82f, height * 0.68f)
+            lineTo(width * 0.89f, height * 0.72f)
+            lineTo(width * 0.85f, height * 0.75f)
+            lineTo(width * 0.82f, height * 0.68f)
+        }
+        drawPath(path = foreHighlights, color = Color(0xFFFFF3EC).copy(alpha = 0.45f))
+    }
+}
+
+@Composable
 fun AuthScreen(viewModel: AuthViewModel, onAuthSuccess: (String) -> Unit) {
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
@@ -41,23 +175,23 @@ fun AuthScreen(viewModel: AuthViewModel, onAuthSuccess: (String) -> Unit) {
     val currentUser by viewModel.currentUser.collectAsState()
 
     var isLoginMode by remember { mutableStateOf(true) }
+    var activeAuthType by remember { mutableStateOf("password") }
+
+    // Forms Inputs
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var googleEmail by remember { mutableStateOf("") }
+    var phoneNumberInput by remember { mutableStateOf("") }
+    var receivedOtpInput by remember { mutableStateOf("") }
+    var isOtpSentState by remember { mutableStateOf(false) }
 
-    // Modern glowing dark gradient palette
-    val gradientBackground = Brush.verticalGradient(
-        colors = listOf(
-            Color(0xFF1E2640), // Premium deep dark blue
-            Color(0xFF0F1322), // Near black blue
-            Color(0xFF060810)  // Solid elegant black
-        )
-    )
+    // User settings
+    var rememberMe by remember { mutableStateOf(true) }
 
-    val primaryBlue = Color(0xFF3B82F6)
-    val textSlateColor = Color.White
-    val textSlateMuted = Color(0xFF94A3B8)
-    val borderCharcoal = Color(0xFF1E293B)
-    val activeGlowBlue = Color(0xFF2563EB)
+    val coralPrimary = Color(0xFFEBC1B0)       // Mockup signature button color
+    val textCharcoalDark = Color(0xFF281C1B)   // Button text matching coral
+    val glassInputBg = Color.White.copy(alpha = 0.12f)
+    val glassBorderColor = Color.White.copy(alpha = 0.20f)
 
     LaunchedEffect(isLoggedIn) {
         if (isLoggedIn && currentUser != null) {
@@ -73,267 +207,481 @@ fun AuthScreen(viewModel: AuthViewModel, onAuthSuccess: (String) -> Unit) {
     }
 
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(gradientBackground)
-            .statusBarsPadding()
-            .navigationBarsPadding(),
+        modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
+        // Render custom high-fidelity scenic canvas
+        SunsetMountainBackdrop()
+
+        // Core Form Centered
         Column(
             modifier = Modifier
-                .widthIn(max = 440.dp)
+                .widthIn(max = 410.dp)
                 .fillMaxWidth()
-                .padding(28.dp),
+                .statusBarsPadding()
+                .navigationBarsPadding()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 28.dp, vertical = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-            // Large White Premium Title
+            // Thin Display Heading #10
             Text(
-                text = if (isLoginMode) "Log in" else "Sign up",
-                fontSize = 44.sp,
-                fontWeight = FontWeight.Normal,
-                color = textSlateColor,
+                text = if (isLoginMode) "Login #10" else "Register #10",
+                fontSize = 17.sp,
+                fontWeight = FontWeight.Light,
+                color = Color.White.copy(alpha = 0.7f),
                 textAlign = TextAlign.Center,
-                letterSpacing = (-1).sp
+                letterSpacing = 2.sp
             )
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
-            // Subtitle aligned with recovery pro/student database context but matching exact imagery text flow
+            // Bold Have an Account? Subheading
             Text(
-                text = if (isLoginMode) {
-                    "Log in to your account and seamlessly continue managing your student database, campaigns, and progress just where you left off."
-                } else {
-                    "Set up your secure recovery credentials to continue maintaining compliance, calling campaigns, and secure student databases."
-                },
-                fontSize = 13.sp,
-                color = Color(0xFF8E9CB2),
+                text = if (isLoginMode) "Have an account?" else "Create account!",
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Light,
+                color = Color.White,
                 textAlign = TextAlign.Center,
-                lineHeight = 20.sp,
-                modifier = Modifier.padding(horizontal = 12.dp)
+                letterSpacing = (-0.5).sp
             )
-
-            Spacer(modifier = Modifier.height(36.dp))
-
-            // Email/Username Input (fully rounded as requested)
-            OutlinedTextField(
-                value = username,
-                onValueChange = { username = it },
-                placeholder = { Text("Enter your email address", color = Color(0xFF556073), fontSize = 14.sp) },
-                leadingIcon = {
-                    Icon(
-                        imageVector = Icons.Default.Email,
-                        contentDescription = "Mail Icon",
-                        tint = Color(0xFF556073),
-                        modifier = Modifier.size(18.dp)
-                    )
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp)
-                    .testTag("username_input"),
-                shape = RoundedCornerShape(28.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = Color(0xFF0B0E17),
-                    unfocusedContainerColor = Color(0xFF0B0E17),
-                    focusedBorderColor = activeGlowBlue,
-                    unfocusedBorderColor = borderCharcoal,
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White,
-                    focusedPlaceholderColor = Color(0xFF556073),
-                    unfocusedPlaceholderColor = Color(0xFF556073)
-                ),
-                singleLine = true
-            )
-
-            Spacer(modifier = Modifier.height(14.dp))
-
-            // Password Input (fully rounded with lock glowing status indicator at the end)
-            OutlinedTextField(
-                value = password,
-                onValueChange = { password = it },
-                placeholder = { Text("Enter your password", color = Color(0xFF556073), fontSize = 14.sp) },
-                leadingIcon = {
-                    Icon(
-                        imageVector = Icons.Default.Lock,
-                        contentDescription = "Lock Icon",
-                        tint = Color(0xFF556073),
-                        modifier = Modifier.size(18.dp)
-                    )
-                },
-                trailingIcon = {
-                    // Premium blue lock status icon matching exact image visual accent on right side
-                    Box(
-                        modifier = Modifier
-                            .padding(end = 4.dp)
-                            .size(32.dp)
-                            .background(Color(0xFF1E3A8A).copy(alpha = 0.4f), CircleShape),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text("🔒", fontSize = 12.sp, color = primaryBlue)
-                    }
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp)
-                    .testTag("password_input"),
-                shape = RoundedCornerShape(28.dp),
-                visualTransformation = PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = Color(0xFF0B0E17),
-                    unfocusedContainerColor = Color(0xFF0B0E17),
-                    focusedBorderColor = activeGlowBlue,
-                    unfocusedBorderColor = borderCharcoal,
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White,
-                    focusedPlaceholderColor = Color(0xFF556073),
-                    unfocusedPlaceholderColor = Color(0xFF556073)
-                ),
-                singleLine = true
-            )
-
-            Spacer(modifier = Modifier.height(36.dp))
-
-            // Log In premium pill-shaped button
-            Button(
-                onClick = {
-                    if (isLoginMode) {
-                        viewModel.login(username, password)
-                    } else {
-                        viewModel.register(username, password)
-                    }
-                },
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF191D29)), // Charcoal dark pill container as requested
-                border = BorderStroke(1.dp, Color(0xFF2E3B4E)),
-                shape = RoundedCornerShape(28.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(54.dp)
-                    .testTag("submit_button"),
-                enabled = uiState !is AuthUiState.Loading
-            ) {
-                if (uiState is AuthUiState.Loading) {
-                    CircularProgressIndicator(
-                        color = Color.White,
-                        modifier = Modifier.size(20.dp),
-                        strokeWidth = 2.dp
-                    )
-                } else {
-                    Text(
-                        text = if (isLoginMode) "Log in" else "Sign up",
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Normal,
-                        color = Color.White
-                    )
-                }
-            }
 
             Spacer(modifier = Modifier.height(28.dp))
 
-            // Social Buttons side-by-side as in image mockup (Facebook, Google, Apple) with click feedback
+            // --- Glassmorphic Authentication Tab Selectors ---
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 24.dp)
+                    .clip(RoundedCornerShape(32.dp))
+                    .background(Color.White.copy(alpha = 0.08f))
+                    .border(1.dp, Color.White.copy(alpha = 0.12f), RoundedCornerShape(32.dp))
+                    .padding(4.dp),
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                val socialButtonColors = ButtonDefaults.outlinedButtonColors(
-                    containerColor = Color(0xFF0E121E),
-                    contentColor = Color.White
+                val tabItems = listOf(
+                    "password" to "🔑 Password",
+                    "google" to "🔴 Google",
+                    "phone" to "📱 Phone OTP"
                 )
-
-                // Facebook Social
-                OutlinedButton(
-                    onClick = {
-                        Toast.makeText(context, "Facebook Sign-In Demo Mode Activated", Toast.LENGTH_SHORT).show()
-                    },
-                    colors = socialButtonColors,
-                    border = BorderStroke(1.dp, borderCharcoal),
-                    shape = RoundedCornerShape(24.dp),
-                    contentPadding = PaddingValues(0.dp),
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(44.dp)
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
+                tabItems.forEach { (type, label) ->
+                    val isSelected = activeAuthType == type
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(24.dp))
+                            .background(if (isSelected) Color.White.copy(alpha = 0.15f) else Color.Transparent)
+                            .clickable { activeAuthType = type }
+                            .padding(vertical = 10.dp),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Text("🔵 ", fontSize = 11.sp)
-                        Text("Facebook", fontSize = 11.sp, fontWeight = FontWeight.Normal, color = Color(0xFF8E9CB2))
-                    }
-                }
-
-                // Google Social
-                OutlinedButton(
-                    onClick = {
-                        Toast.makeText(context, "Google Sign-In Demo Mode Activated", Toast.LENGTH_SHORT).show()
-                    },
-                    colors = socialButtonColors,
-                    border = BorderStroke(1.dp, borderCharcoal),
-                    shape = RoundedCornerShape(24.dp),
-                    contentPadding = PaddingValues(0.dp),
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(44.dp)
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        Text("🔴 ", fontSize = 11.sp)
-                        Text("Google", fontSize = 11.sp, fontWeight = FontWeight.Normal, color = Color(0xFF8E9CB2))
-                    }
-                }
-
-                // Apple Social
-                OutlinedButton(
-                    onClick = {
-                        Toast.makeText(context, "Apple Sign-In Demo Mode Activated", Toast.LENGTH_SHORT).show()
-                    },
-                    colors = socialButtonColors,
-                    border = BorderStroke(1.dp, borderCharcoal),
-                    shape = RoundedCornerShape(24.dp),
-                    contentPadding = PaddingValues(0.dp),
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(44.dp)
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        Text(" ", fontSize = 13.sp, color = Color.White)
-                        Text("Apple", fontSize = 11.sp, fontWeight = FontWeight.Normal, color = Color(0xFF8E9CB2))
+                        Text(
+                            text = label,
+                            fontSize = 11.sp,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                            color = if (isSelected) Color.White else Color.White.copy(alpha = 0.6f)
+                        )
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(36.dp))
+            // --- Render Dynamic Input Fields ---
+            when (activeAuthType) {
+                "password" -> {
+                    // Username/Email Input Field
+                    OutlinedTextField(
+                        value = username,
+                        onValueChange = { username = it },
+                        placeholder = { Text("Username", color = Color.White.copy(alpha = 0.5f), fontSize = 14.sp) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp)
+                            .testTag("username_input"),
+                        shape = RoundedCornerShape(28.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = glassInputBg,
+                            unfocusedContainerColor = glassInputBg,
+                            focusedBorderColor = coralPrimary,
+                            unfocusedBorderColor = glassBorderColor,
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White,
+                            focusedPlaceholderColor = Color.White.copy(alpha = 0.5f),
+                            unfocusedPlaceholderColor = Color.White.copy(alpha = 0.5f)
+                        ),
+                        singleLine = true
+                    )
 
-            // Alternate Auth Mode Switcher at the bottom
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    // Password Input Field with circular key icon indicator
+                    OutlinedTextField(
+                        value = password,
+                        onValueChange = { password = it },
+                        placeholder = { Text("Password", color = Color.White.copy(alpha = 0.5f), fontSize = 14.sp) },
+                        trailingIcon = {
+                            Box(
+                                modifier = Modifier
+                                    .padding(end = 6.dp)
+                                    .size(32.dp)
+                                    .background(Color.White.copy(alpha = 0.15f), CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text("⚪", fontSize = 9.sp, color = Color.White)
+                            }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp)
+                            .testTag("password_input"),
+                        shape = RoundedCornerShape(28.dp),
+                        visualTransformation = PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = glassInputBg,
+                            unfocusedContainerColor = glassInputBg,
+                            focusedBorderColor = coralPrimary,
+                            unfocusedBorderColor = glassBorderColor,
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White,
+                            focusedPlaceholderColor = Color.White.copy(alpha = 0.5f),
+                            unfocusedPlaceholderColor = Color.White.copy(alpha = 0.5f)
+                        ),
+                        singleLine = true
+                    )
+
+                    Spacer(modifier = Modifier.height(18.dp))
+
+                    // Remember Me Checklist and Recipient Form (Space between)
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 4.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Start
+                        ) {
+                            Checkbox(
+                                checked = rememberMe,
+                                onCheckedChange = { rememberMe = it },
+                                colors = CheckboxDefaults.colors(
+                                    checkedColor = coralPrimary,
+                                    uncheckedColor = Color.White.copy(alpha = 0.40f),
+                                    checkmarkColor = textCharcoalDark
+                                ),
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "Remember Me",
+                                color = Color.White.copy(alpha = 0.75f),
+                                fontSize = 13.sp
+                            )
+                        }
+
+                        Text(
+                            text = "Forgot Password",
+                            color = Color.White.copy(alpha = 0.8f),
+                            fontWeight = FontWeight.Normal,
+                            fontSize = 13.sp,
+                            modifier = Modifier
+                                .clickable {
+                                    Toast.makeText(context, "Password Recovery Initiated", Toast.LENGTH_SHORT).show()
+                                }
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(28.dp))
+
+                    // SIGN IN Submit Button (Coral/Beige)
+                    Button(
+                        onClick = {
+                            if (isLoginMode) {
+                                viewModel.login(username, password)
+                            } else {
+                                viewModel.register(username, password)
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = coralPrimary),
+                        shape = RoundedCornerShape(28.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(54.dp)
+                            .testTag("submit_button"),
+                        enabled = uiState !is AuthUiState.Loading
+                    ) {
+                        if (uiState is AuthUiState.Loading) {
+                            CircularProgressIndicator(
+                                color = textCharcoalDark,
+                                modifier = Modifier.size(20.dp),
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Text(
+                                text = if (isLoginMode) "SIGN IN" else "SIGN UP",
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = textCharcoalDark,
+                                letterSpacing = 1.sp
+                            )
+                        }
+                    }
+                }
+
+                "google" -> {
+                    // Google email Address Input
+                    OutlinedTextField(
+                        value = googleEmail,
+                        onValueChange = { googleEmail = it },
+                        placeholder = { Text("Google Account Email", color = Color.White.copy(alpha = 0.5f), fontSize = 14.sp) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp)
+                            .testTag("google_email_input"),
+                        shape = RoundedCornerShape(28.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = glassInputBg,
+                            unfocusedContainerColor = glassInputBg,
+                            focusedBorderColor = coralPrimary,
+                            unfocusedBorderColor = glassBorderColor,
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White,
+                            focusedPlaceholderColor = Color.White.copy(alpha = 0.5f),
+                            unfocusedPlaceholderColor = Color.White.copy(alpha = 0.5f)
+                        ),
+                        singleLine = true
+                    )
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    Text(
+                        text = "Authorized access is automatically filtered across academic institutional records.",
+                        color = Color.White.copy(alpha = 0.6f),
+                        fontSize = 11.sp,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(horizontal = 8.dp)
+                    )
+
+                    Spacer(modifier = Modifier.height(28.dp))
+
+                    // Google Login Action
+                    Button(
+                        onClick = { viewModel.loginWithGoogle(googleEmail) },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDF4A32)),
+                        shape = RoundedCornerShape(28.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(54.dp)
+                            .testTag("google_submit_button"),
+                        enabled = uiState !is AuthUiState.Loading && googleEmail.isNotBlank()
+                    ) {
+                        if (uiState is AuthUiState.Loading) {
+                            CircularProgressIndicator(color = Color.White, modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                        } else {
+                            Text(
+                                text = "VERIFY GOOGLE SIGN IN",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White,
+                                letterSpacing = 1.sp
+                            )
+                        }
+                    }
+                }
+
+                "phone" -> {
+                    // Phone Number Input
+                    OutlinedTextField(
+                        value = phoneNumberInput,
+                        onValueChange = { phoneNumberInput = it },
+                        placeholder = { Text("Phone Number (+91...)", color = Color.White.copy(alpha = 0.5f), fontSize = 14.sp) },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp)
+                            .testTag("phone_number_input"),
+                        shape = RoundedCornerShape(28.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = glassInputBg,
+                            unfocusedContainerColor = glassInputBg,
+                            focusedBorderColor = coralPrimary,
+                            unfocusedBorderColor = glassBorderColor,
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White,
+                            focusedPlaceholderColor = Color.White.copy(alpha = 0.5f),
+                            unfocusedPlaceholderColor = Color.White.copy(alpha = 0.5f)
+                        ),
+                        singleLine = true,
+                        enabled = !isOtpSentState
+                    )
+
+                    if (isOtpSentState) {
+                        Spacer(modifier = Modifier.height(14.dp))
+                        
+                        OutlinedTextField(
+                            value = receivedOtpInput,
+                            onValueChange = { receivedOtpInput = it },
+                            placeholder = { Text("6-Digit PIN Verification", color = Color.White.copy(alpha = 0.5f), fontSize = 14.sp) },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(56.dp)
+                                .testTag("received_otp_input"),
+                            shape = RoundedCornerShape(28.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedContainerColor = glassInputBg,
+                                unfocusedContainerColor = glassInputBg,
+                                focusedBorderColor = coralPrimary,
+                                unfocusedBorderColor = glassBorderColor,
+                                focusedTextColor = Color.White,
+                                unfocusedTextColor = Color.White,
+                                focusedPlaceholderColor = Color.White.copy(alpha = 0.5f),
+                                unfocusedPlaceholderColor = Color.White.copy(alpha = 0.5f)
+                            ),
+                            singleLine = true
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(28.dp))
+
+                    Button(
+                        onClick = {
+                            if (!isOtpSentState) {
+                                if (phoneNumberInput.isNotBlank()) {
+                                    isOtpSentState = true
+                                    Toast.makeText(context, "Firebase OTP Code Sent to $phoneNumberInput", Toast.LENGTH_LONG).show()
+                                } else {
+                                    Toast.makeText(context, "Enter a valid phone number", Toast.LENGTH_SHORT).show()
+                                }
+                            } else {
+                                viewModel.loginWithPhone(phoneNumberInput)
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981)),
+                        shape = RoundedCornerShape(28.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(54.dp)
+                            .testTag("phone_submit_button"),
+                        enabled = uiState !is AuthUiState.Loading && phoneNumberInput.isNotBlank()
+                    ) {
+                        if (uiState is AuthUiState.Loading) {
+                            CircularProgressIndicator(color = Color.White, modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                        } else {
+                            Text(
+                                text = if (!isOtpSentState) "SEND SMS VERIFICATION" else "VERIFY CODE & SIGN IN",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White,
+                                letterSpacing = 1.sp
+                            )
+                        }
+                    }
+
+                    if (isOtpSentState) {
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(
+                            text = "Change Phone Number",
+                            color = coralPrimary,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier
+                                .clickable { isOtpSentState = false; receivedOtpInput = "" }
+                                .padding(4.dp)
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // -- Separator Text: "— Or Sign In With —" --
+            Text(
+                text = "— Or Sign In With —",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Normal,
+                color = Color.White.copy(alpha = 0.55f),
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(modifier = Modifier.height(18.dp))
+
+            // -- Social Facebook & Twitter side-by-side Flat buttons (White matching image) --
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                // Facebook Button
+                Button(
+                    onClick = {
+                        Toast.makeText(context, "Facebook Sign-In Demo Mode Activated", Toast.LENGTH_SHORT).show()
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.White,
+                        contentColor = textCharcoalDark
+                    ),
+                    shape = RoundedCornerShape(4.dp),  // Slightly squared-flat corners matching mockup
+                    contentPadding = PaddingValues(0.dp),
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(44.dp)
+                ) {
+                    Text("Facebook", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF0E121E))
+                }
+
+                // Twitter Button
+                Button(
+                    onClick = {
+                        Toast.makeText(context, "Twitter Sign-In Demo Mode Activated", Toast.LENGTH_SHORT).show()
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.White,
+                        contentColor = textCharcoalDark
+                    ),
+                    shape = RoundedCornerShape(4.dp),
+                    contentPadding = PaddingValues(0.dp),
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(44.dp)
+                ) {
+                    Text("Twitter", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF0E121E))
+                }
+            }
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+            // Alternate Auth Mode Switcher (Sign Up / Log In switch)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = if (isLoginMode) "Didn't have an account? " else "Already have an account? ",
+                    text = if (isLoginMode) "Don't have an account? " else "Already have an account? ",
                     fontSize = 13.sp,
-                    color = Color(0xFF6B7280)
+                    color = Color.White.copy(alpha = 0.65f)
                 )
                 Text(
                     text = if (isLoginMode) "Sign up" else "Log in",
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Bold,
-                    color = primaryBlue,
+                    color = coralPrimary,
                     modifier = Modifier
-                        .clickable { isLoginMode = !isLoginMode }
+                        .clickable {
+                            isLoginMode = !isLoginMode
+                            activeAuthType = "password"
+                        }
                         .padding(horizontal = 4.dp)
                 )
             }
+            
+            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }
+

@@ -33,9 +33,9 @@ fun TelephonyInfrastructureSettings(
     val recordingPolicy by viewModel.recordingPolicy.collectAsState()
     val maxDailyCalls by viewModel.maxDailyCalls.collectAsState()
 
-    val primaryBlue = Color(0xFF2563EB)
-    val textSlateColor = Color(0xFF1E293B)
-    val textSlateMuted = Color(0xFF64748B)
+    val primaryBlue = Color(0xFF3B82F6)
+    val textSlateColor = Color(0xFFF8FAFC)
+    val textSlateMuted = Color(0xFF94A3B8)
 
     val simOptions = listOf(
         "Force SIM 1 Only",
@@ -77,17 +77,17 @@ fun TelephonyInfrastructureSettings(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.White,
+                    containerColor = Color.Transparent,
                     titleContentColor = textSlateColor
                 ),
-                modifier = Modifier.border(1.dp, Color(0xFFF1F5F9))
+                modifier = Modifier.border(1.dp, Color(0xFF1E293D))
             )
         }
     ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color(0xFFF8FAFC))
+                .background(Color(0xFF090F1C))
                 .padding(innerPadding)
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp),
@@ -97,7 +97,7 @@ fun TelephonyInfrastructureSettings(
             // Introduction Info Alert
             Card(
                 shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFFEFF6FF)),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF1E3A8A).copy(alpha = 0.3f)),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Row(
@@ -113,7 +113,7 @@ fun TelephonyInfrastructureSettings(
                     Text(
                         text = "Manage agent hardware configurations, regulatory storage adherence settings, and handset network cellular constraints from this panel.",
                         fontSize = 12.sp,
-                        color = Color(0xFF1D4ED8),
+                        color = Color(0xFFBFDBFE),
                         lineHeight = 16.sp
                     )
                 }
@@ -122,10 +122,10 @@ fun TelephonyInfrastructureSettings(
             // --- SECTION 1: DUAL SIM PRIMARY SLOT SELECTOR ---
             Card(
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF172033)),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(16.dp))
+                    .border(1.dp, Color(0xFF1E293D), RoundedCornerShape(16.dp))
             ) {
                 Column(
                     modifier = Modifier.padding(16.dp),
@@ -154,7 +154,7 @@ fun TelephonyInfrastructureSettings(
                         color = textSlateMuted
                     )
 
-                    HorizontalDivider(color = Color(0xFFF1F5F9))
+                    HorizontalDivider(color = Color(0xFF1E293D))
 
                     // Column of Radio item options
                     simOptions.forEachIndexed { index, option ->
@@ -191,10 +191,10 @@ fun TelephonyInfrastructureSettings(
             // --- SECTION 2: CALL RECORDING POLICY GROUP ---
             Card(
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF172033)),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(16.dp))
+                    .border(1.dp, Color(0xFF1E293D), RoundedCornerShape(16.dp))
             ) {
                 Column(
                     modifier = Modifier.padding(16.dp),
@@ -223,7 +223,7 @@ fun TelephonyInfrastructureSettings(
                         color = textSlateMuted
                     )
 
-                    HorizontalDivider(color = Color(0xFFF1F5F9))
+                    HorizontalDivider(color = Color(0xFF1E293D))
 
                     recordingOptions.forEachIndexed { index, option ->
                         Row(
@@ -259,10 +259,10 @@ fun TelephonyInfrastructureSettings(
             // --- SECTION 3: DAILY CALL THROTTLE COUNTER ---
             Card(
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF172033)),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(16.dp))
+                    .border(1.dp, Color(0xFF1E293D), RoundedCornerShape(16.dp))
             ) {
                 Column(
                     modifier = Modifier.padding(16.dp),
@@ -281,7 +281,7 @@ fun TelephonyInfrastructureSettings(
                         color = textSlateMuted
                     )
 
-                    HorizontalDivider(color = Color(0xFFF1F5F9))
+                    HorizontalDivider(color = Color(0xFF1E293D))
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -316,7 +316,9 @@ fun TelephonyInfrastructureSettings(
                             shape = RoundedCornerShape(8.dp),
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = primaryBlue,
-                                unfocusedBorderColor = Color(0xFFCBD5E1)
+                                unfocusedBorderColor = Color(0xFF1E293D),
+                                focusedTextColor = textSlateColor,
+                                unfocusedTextColor = textSlateColor
                             )
                         )
                     }
@@ -334,7 +336,7 @@ fun TelephonyInfrastructureSettings(
                             colors = SliderDefaults.colors(
                                 thumbColor = primaryBlue,
                                 activeTrackColor = primaryBlue,
-                                inactiveTrackColor = Color(0xFFE2E8F0)
+                                inactiveTrackColor = Color(0xFF1E293D)
                             )
                         )
                         Row(

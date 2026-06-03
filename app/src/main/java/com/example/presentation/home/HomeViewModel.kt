@@ -15,6 +15,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -33,11 +36,16 @@ class HomeViewModel @Inject constructor(
         list.filter { it.debtorId == debtorId }
     }
 
-    fun importStudentDataCollegeWise(csvContent: String, collegeName: String, onFinished: (Int, String?) -> Unit) {
+    fun importStudentDataCollegeWise(
+        csvContent: String,
+        collegeName: String,
+        isStudentDbSchema: Boolean = false,
+        onFinished: (Int, String?) -> Unit
+    ) {
         viewModelScope.launch {
             try {
                 val handler = DataImportHandler(debtorDao)
-                val result = handler.parseAndValidateCsvText(csvContent)
+                val result = handler.parseAndValidateCsvText(csvContent, isStudentDbSchema)
                 if (result.successfullyImported.isNotEmpty()) {
                     val count = handler.saveToLocalDatabase(result.successfullyImported, collegeName)
                     val errorString = if (result.errorLogs.isNotEmpty()) {
@@ -100,6 +108,9 @@ class HomeViewModel @Inject constructor(
     private val _dispositionDebtor = MutableStateFlow<Debtor?>(null)
     val dispositionDebtor: StateFlow<Debtor?> = _dispositionDebtor.asStateFlow()
 
+    private val _dialerEvents = MutableSharedFlow<String>()
+    val dialerEvents: SharedFlow<String> = _dialerEvents.asSharedFlow()
+
     fun selectDispositionDebtor(debtor: Debtor?) {
         _dispositionDebtor.value = debtor
     }
@@ -112,6 +123,7 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             _activeCallDebtor.value = debtor
             _isDialing.value = true
+            _dialerEvents.emit(debtor.phoneNumber)
         }
     }
 

@@ -46,6 +46,32 @@ class AuthViewModel @Inject constructor(
         }
     }
 
+    fun loginWithGoogle(email: String) {
+        viewModelScope.launch {
+            _uiState.value = AuthUiState.Loading
+            authRepository.loginWithGoogle(email)
+                .onSuccess {
+                    _uiState.value = AuthUiState.Success(email)
+                }
+                .onFailure {
+                    _uiState.value = AuthUiState.Error(it.message ?: "Google Login failed")
+                }
+        }
+    }
+
+    fun loginWithPhone(phoneNumber: String) {
+        viewModelScope.launch {
+            _uiState.value = AuthUiState.Loading
+            authRepository.loginWithPhone(phoneNumber)
+                .onSuccess {
+                    _uiState.value = AuthUiState.Success(phoneNumber)
+                }
+                .onFailure {
+                    _uiState.value = AuthUiState.Error(it.message ?: "Phone Login failed")
+                }
+        }
+    }
+
     fun register(username: String, password: String) {
         viewModelScope.launch {
             _uiState.value = AuthUiState.Loading

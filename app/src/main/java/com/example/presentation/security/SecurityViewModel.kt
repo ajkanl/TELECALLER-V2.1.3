@@ -74,8 +74,8 @@ class SecurityViewModel @Inject constructor(
         }
     }
 
-    fun updateAgentPermissions(agentId: String, permissions: com.example.domain.security.AgentPermissions) {
-        securitySettingsStore.updateAgentPermissions(agentId, permissions)
+    fun updateAgentPermissions(agentId: String, permissions: com.example.domain.security.AgentPermissions, isDisabled: Boolean = false) {
+        securitySettingsStore.updateAgentPermissions(agentId, permissions, isDisabled)
     }
 
     fun updateAgentTarget(agentId: String, targetAmount: Double) {

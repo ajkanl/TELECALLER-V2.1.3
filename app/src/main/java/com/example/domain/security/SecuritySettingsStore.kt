@@ -22,7 +22,8 @@ data class TelecallerAgent(
     val talkTimeMinutes: Int,
     val ptpsSecured: Int,
     val targetAmount: Double = 150000.0,
-    val permissions: AgentPermissions = AgentPermissions()
+    val permissions: AgentPermissions = AgentPermissions(),
+    val isDisabled: Boolean = false
 )
 
 @Singleton
@@ -96,11 +97,11 @@ class SecuritySettingsStore @Inject constructor() {
         _telecallersList.value = _telecallersList.value + newAgent
     }
 
-    fun updateAgentPermissions(agentId: String, permissions: AgentPermissions) {
+    fun updateAgentPermissions(agentId: String, permissions: AgentPermissions, isDisabled: Boolean = false) {
         _telecallersList.value = _telecallersList.value.map { agent ->
             if (agent.id == agentId) {
                 // If the dynamic permissions are toggled, update both nested permissions and masking override
-                val updated = agent.copy(permissions = permissions)
+                val updated = agent.copy(permissions = permissions, isDisabled = isDisabled)
                 // If active impersonation matches, update the active state as well
                 if (_activeImpersonatedAgent.value?.id == agentId) {
                     _activeImpersonatedAgent.value = updated

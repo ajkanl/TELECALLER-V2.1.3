@@ -58,18 +58,18 @@ fun AdminAnalyticsDashboard(
     onBack: () -> Unit
 ) {
     // Premium Design Palette
-    val backgroundBg = Color(0xFFF8FAFC)
-    val webChromeHeaderBg = Color(0xFF1E293B)
-    val accentBlue = Color(0xFF2563EB)
+    val backgroundBg = Color(0xFF090F1C)
+    val webChromeHeaderBg = Color(0xFF131B2A)
+    val accentBlue = Color(0xFF3B82F6)
     val accentGreen = Color(0xFF10B981)
     val accentOrange = Color(0xFFF97316)
-    val textDark = Color(0xFF0F172A)
-    val textSecondary = Color(0xFF475569)
-    val borderSlate = Color(0xFFE2E8F0)
+    val textDark = Color(0xFFF8FAFC)
+    val textSecondary = Color(0xFF94A3B8)
+    val borderSlate = Color(0xFF1E293D)
 
     // Tab state: 0 -> Telemetry, 1 -> Agent Control, 2 -> Student Search
     var selectedTab by remember { mutableStateOf(0) }
-    var isSimulatedWebViewMode by remember { mutableStateOf(true) }
+    var isSimulatedWebViewMode by remember { mutableStateOf(false) }
     var syncTriggeredCount by remember { mutableStateOf(0) }
 
     // Dynamic states collected from viewModels
@@ -137,13 +137,13 @@ fun AdminAnalyticsDashboard(
                         modifier = Modifier
                             .padding(end = 12.dp)
                             .clip(RoundedCornerShape(8.dp))
-                            .background(Color(0xFFF1F5F9))
+                            .background(Color(0xFF131B2A))
                             .padding(2.dp)
                     ) {
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(6.dp))
-                                .background(if (isSimulatedWebViewMode) Color.White else Color.Transparent)
+                                .background(if (isSimulatedWebViewMode) Color(0xFF1D2D44) else Color.Transparent)
                                 .clickable { isSimulatedWebViewMode = true }
                                 .padding(horizontal = 10.dp, vertical = 6.dp),
                             contentAlignment = Alignment.Center
@@ -158,7 +158,7 @@ fun AdminAnalyticsDashboard(
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(6.dp))
-                                .background(if (!isSimulatedWebViewMode) Color.White else Color.Transparent)
+                                .background(if (!isSimulatedWebViewMode) Color(0xFF1D2D44) else Color.Transparent)
                                 .clickable { isSimulatedWebViewMode = false }
                                 .padding(horizontal = 10.dp, vertical = 6.dp),
                             contentAlignment = Alignment.Center
@@ -173,10 +173,10 @@ fun AdminAnalyticsDashboard(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.White,
+                    containerColor = Color.Transparent,
                     titleContentColor = textDark
                 ),
-                modifier = Modifier.border(1.dp, Color(0xFFF1F5F9))
+                modifier = Modifier.border(1.dp, Color(0xFF1E293D))
             )
         }
     ) { innerPadding ->
@@ -239,26 +239,26 @@ fun AdminAnalyticsDashboard(
             // Centralized M3 Switcher Tab Row
             TabRow(
                 selectedTabIndex = selectedTab,
-                containerColor = Color.White,
+                containerColor = Color(0xFF131B2A),
                 contentColor = accentBlue,
-                modifier = Modifier.fillMaxWidth().border(1.dp, Color(0xFFE2E8F0))
+                modifier = Modifier.fillMaxWidth().border(1.dp, Color(0xFF1E293D))
             ) {
                 Tab(
                     selected = selectedTab == 0,
                     onClick = { selectedTab = 0 },
-                    text = { Text("📊 Telemetry", fontWeight = FontWeight.Bold, fontSize = 12.sp) },
+                    text = { Text("📊 Telemetry", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = if (selectedTab == 0) accentBlue else textSecondary) },
                     modifier = Modifier.testTag("admin_tab_telemetry")
                 )
                 Tab(
                     selected = selectedTab == 1,
                     onClick = { selectedTab = 1 },
-                    text = { Text("👥 Agent Control", fontWeight = FontWeight.Bold, fontSize = 12.sp) },
+                    text = { Text("👥 Agent Control", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = if (selectedTab == 1) accentBlue else textSecondary) },
                     modifier = Modifier.testTag("admin_tab_agents")
                 )
                 Tab(
                     selected = selectedTab == 2,
                     onClick = { selectedTab = 2 },
-                    text = { Text("🔍 Student Lookup", fontWeight = FontWeight.Bold, fontSize = 12.sp) },
+                    text = { Text("🔍 Student Lookup", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = if (selectedTab == 2) accentBlue else textSecondary) },
                     modifier = Modifier.testTag("admin_tab_search")
                 )
             }
@@ -300,7 +300,7 @@ fun AdminAnalyticsDashboard(
                                     Box(
                                         modifier = Modifier
                                             .clip(RoundedCornerShape(20.dp))
-                                            .background(Color(0xFFECFDF5))
+                                            .background(accentGreen.copy(alpha = 0.15f))
                                             .padding(horizontal = 8.dp, vertical = 4.dp)
                                     ) {
                                         Text(
@@ -317,7 +317,7 @@ fun AdminAnalyticsDashboard(
                             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                                 Card(
                                     shape = RoundedCornerShape(12.dp),
-                                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                                    colors = CardDefaults.cardColors(containerColor = Color(0xFF172033)),
                                     modifier = Modifier.fillMaxWidth().border(1.dp, borderSlate, RoundedCornerShape(12.dp))
                                 ) {
                                     Row(
@@ -337,7 +337,7 @@ fun AdminAnalyticsDashboard(
 
                                 Card(
                                     shape = RoundedCornerShape(12.dp),
-                                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                                    colors = CardDefaults.cardColors(containerColor = Color(0xFF172033)),
                                     modifier = Modifier.fillMaxWidth().border(1.dp, borderSlate, RoundedCornerShape(12.dp))
                                 ) {
                                     Row(
@@ -362,7 +362,7 @@ fun AdminAnalyticsDashboard(
 
                                 Card(
                                     shape = RoundedCornerShape(12.dp),
-                                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                                    colors = CardDefaults.cardColors(containerColor = Color(0xFF172033)),
                                     modifier = Modifier.fillMaxWidth().border(1.dp, borderSlate, RoundedCornerShape(12.dp)).testTag("attempted_unattempted_card")
                                 ) {
                                     Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -394,7 +394,7 @@ fun AdminAnalyticsDashboard(
                                                 progress = { progressRatio },
                                                 modifier = Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp)),
                                                 color = accentGreen,
-                                                trackColor = Color(0xFFFFEDD5) // Soft orange for unattempted tracking
+                                                trackColor = accentOrange.copy(alpha = 0.2f) // Soft orange for unattempted tracking
                                             )
                                             Row(
                                                 modifier = Modifier.fillMaxWidth(),
@@ -425,7 +425,7 @@ fun AdminAnalyticsDashboard(
                             // Radial Dial Chart for Conversion Ratio
                             Card(
                                 shape = RoundedCornerShape(14.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color.White),
+                                colors = CardDefaults.cardColors(containerColor = Color(0xFF172033)),
                                 modifier = Modifier.fillMaxWidth().border(1.dp, borderSlate, RoundedCornerShape(14.dp))
                             ) {
                                 Column(
@@ -446,7 +446,7 @@ fun AdminAnalyticsDashboard(
                                     ) {
                                         Canvas(modifier = Modifier.size(100.dp)) {
                                             drawArc(
-                                                color = Color(0xFFF1F5F9),
+                                                color = Color(0xFF1E293D),
                                                 startAngle = 135f,
                                                 sweepAngle = 270f,
                                                 useCenter = false,
@@ -471,7 +471,7 @@ fun AdminAnalyticsDashboard(
                             // Leaderboard of Active Telecallers
                             Card(
                                 shape = RoundedCornerShape(14.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color.White),
+                                colors = CardDefaults.cardColors(containerColor = Color(0xFF172033)),
                                 modifier = Modifier.fillMaxWidth().border(1.dp, borderSlate, RoundedCornerShape(14.dp))
                             ) {
                                 Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -563,7 +563,7 @@ fun AdminAnalyticsDashboard(
                                                         Box(
                                                             modifier = Modifier
                                                                 .clip(RoundedCornerShape(4.dp))
-                                                                .background(if (agent.isOnline) Color(0xFFECFDF5) else Color(0xFFF1F5F9))
+                                                                .background(if (agent.isOnline) accentGreen.copy(alpha = 0.15f) else Color(0xFF1E293D))
                                                                 .padding(horizontal = 4.dp, vertical = 2.dp)
                                                         ) {
                                                             Text(
@@ -609,7 +609,7 @@ fun AdminAnalyticsDashboard(
                                                 // Switch dashboard direct action
                                                 Button(
                                                     onClick = { viewModel.setImpersonatedAgent(agent) },
-                                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEFF6FF)),
+                                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1D2D44)),
                                                     contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
                                                     shape = RoundedCornerShape(6.dp),
                                                     modifier = Modifier.testTag("btn_switch_dashboard_${agent.id}")
@@ -618,7 +618,7 @@ fun AdminAnalyticsDashboard(
                                                 }
                                             }
 
-                                            HorizontalDivider(color = Color(0xFFF1F5F9))
+                                            HorizontalDivider(color = borderSlate)
 
                                             // Visual badges indicating active privileges
                                             Row(
@@ -686,7 +686,7 @@ fun AdminAnalyticsDashboard(
                                         // --- BULK INGESTION PANEL (ADMIN ONLY) ---
                                         Card(
                                             shape = RoundedCornerShape(12.dp),
-                                            colors = CardDefaults.cardColors(containerColor = Color(0xFFF1F5F9)),
+                                            colors = CardDefaults.cardColors(containerColor = Color(0xFF172033)),
                                             modifier = Modifier.fillMaxWidth().clickable { isUploadSectionExpanded = !isUploadSectionExpanded }.testTag("bulk_ingestion_header_card")
                                         ) {
                                             Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -824,7 +824,7 @@ fun AdminAnalyticsDashboard(
                                     items(matchedDebtors) { student ->
                                         Card(
                                             shape = RoundedCornerShape(12.dp),
-                                            colors = CardDefaults.cardColors(containerColor = Color.White),
+                                            colors = CardDefaults.cardColors(containerColor = Color(0xFF172033)),
                                             modifier = Modifier
                                                 .fillMaxWidth()
                                                 .border(1.dp, borderSlate, RoundedCornerShape(12.dp))
@@ -855,7 +855,7 @@ fun AdminAnalyticsDashboard(
                                                     Box(
                                                         modifier = Modifier
                                                             .clip(RoundedCornerShape(6.dp))
-                                                            .background(Color(0xFFEFF6FF))
+                                                            .background(Color(0xFF1D2D44))
                                                             .padding(horizontal = 8.dp, vertical = 4.dp)
                                                     ) {
                                                         Text(student.customerSegment, color = accentBlue, fontWeight = FontWeight.Bold, fontSize = 10.sp)
@@ -1019,7 +1019,7 @@ fun AdminAnalyticsDashboard(
                     Text("Cancel")
                 }
             },
-            containerColor = Color.White
+            containerColor = Color(0xFF172033)
         )
     }
 
@@ -1031,6 +1031,7 @@ fun AdminAnalyticsDashboard(
         var recordPerm by remember(editingAgent) { mutableStateOf(editingAgent.permissions.canRecordAudio) }
         var purgePerm by remember(editingAgent) { mutableStateOf(editingAgent.permissions.canPerformPurge) }
         var adminPerm by remember(editingAgent) { mutableStateOf(editingAgent.permissions.isAdmin) }
+        var agentDisabledVal by remember(editingAgent) { mutableStateOf(editingAgent.isDisabled) }
 
         AlertDialog(
             onDismissRequest = { activePermissionEditingAgent = null },
@@ -1089,20 +1090,30 @@ fun AdminAnalyticsDashboard(
                         accentColor = Color(0xFFDC2626),
                         tag = "perm_admin_${editingAgent.id}"
                     )
+
+                    PermissionToggleItem(
+                        label = "Disable Agent Account",
+                        description = "Freezes this account and hides them from the active & inactive status board",
+                        checked = agentDisabledVal,
+                        onCheckedChange = { agentDisabledVal = it },
+                        accentColor = Color(0xFF64748B),
+                        tag = "perm_disable_${editingAgent.id}"
+                    )
                 }
             },
             confirmButton = {
                 Button(
                     onClick = {
                         viewModel.updateAgentPermissions(
-                            editingAgent.id,
-                            AgentPermissions(
+                            agentId = editingAgent.id,
+                            permissions = AgentPermissions(
                                 callInitiation = callPerm,
                                 canSeeFullNumbers = seeUnmaskedPerm,
                                 canRecordAudio = recordPerm,
                                 canPerformPurge = purgePerm,
                                 isAdmin = adminPerm
-                            )
+                            ),
+                            isDisabled = agentDisabledVal
                         )
                         activePermissionEditingAgent = null
                     },
@@ -1117,7 +1128,7 @@ fun AdminAnalyticsDashboard(
                     Text("Discard Changes")
                 }
             },
-            containerColor = Color.White
+            containerColor = Color(0xFF172033)
         )
     }
 
@@ -1192,7 +1203,7 @@ fun AdminAnalyticsDashboard(
                                 callLogs.forEach { log ->
                                     Card(
                                         shape = RoundedCornerShape(8.dp),
-                                        colors = CardDefaults.cardColors(containerColor = Color(0xFFF8FAFC)),
+                                        colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293D)),
                                         modifier = Modifier.fillMaxWidth().border(1.dp, borderSlate, RoundedCornerShape(8.dp))
                                     ) {
                                         Column(modifier = Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -1231,8 +1242,8 @@ fun AdminAnalyticsDashboard(
                                     }
                                     Card(
                                         shape = RoundedCornerShape(8.dp),
-                                        colors = CardDefaults.cardColors(containerColor = Color(0xFFECFDF5)),
-                                        modifier = Modifier.fillMaxWidth().border(1.dp, Color(0xFFA7F3D0), RoundedCornerShape(8.dp))
+                                        colors = CardDefaults.cardColors(containerColor = Color(0xFF0F1B2B)),
+                                        modifier = Modifier.fillMaxWidth().border(1.dp, Color(0xFF047857), RoundedCornerShape(8.dp))
                                     ) {
                                         Column(modifier = Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                             Row(
@@ -1240,14 +1251,14 @@ fun AdminAnalyticsDashboard(
                                                 horizontalArrangement = Arrangement.SpaceBetween,
                                                 verticalAlignment = Alignment.CenterVertically
                                             ) {
-                                                Text(text = "Amount: ₹${"%,.2f".format(ptp.promisedAmount)}", fontWeight = FontWeight.Bold, fontSize = 11.sp, color = Color(0xFF047857))
+                                                Text(text = "Amount: ₹${"%,.2f".format(ptp.promisedAmount)}", fontWeight = FontWeight.Bold, fontSize = 11.sp, color = accentGreen)
                                                 Box(
                                                     modifier = Modifier
                                                         .clip(RoundedCornerShape(4.dp))
-                                                        .background(Color(0xFF047857).copy(alpha = 0.1f))
+                                                        .background(accentGreen.copy(alpha = 0.15f))
                                                         .padding(horizontal = 4.dp, vertical = 2.dp)
                                                 ) {
-                                                    Text(text = ptp.ptpStatus, color = Color(0xFF047857), fontWeight = FontWeight.Bold, fontSize = 9.sp)
+                                                    Text(text = ptp.ptpStatus, color = accentGreen, fontWeight = FontWeight.Bold, fontSize = 9.sp)
                                                 }
                                             }
                                             Text(text = "Promise Date: $formattedDate", fontSize = 10.sp, color = textSecondary)
@@ -1264,7 +1275,7 @@ fun AdminAnalyticsDashboard(
                     Text("Close Panel")
                 }
             },
-            containerColor = Color.White
+            containerColor = Color(0xFF172033)
         )
     }
 }
@@ -1295,15 +1306,15 @@ fun PermissionToggleItem(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(8.dp))
-            .background(Color(0xFFF8FAFC))
-            .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(8.dp))
+            .background(Color(0xFF172033))
+            .border(1.dp, Color(0xFF1E293D), RoundedCornerShape(8.dp))
             .padding(10.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column(modifier = Modifier.weight(1f).padding(end = 6.dp)) {
-            Text(label, fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color(0xFF0F172A))
-            Text(description, fontSize = 10.sp, color = Color(0xFF475569))
+            Text(label, fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color(0xFFF8FAFC))
+            Text(description, fontSize = 10.sp, color = Color(0xFF94A3B8))
         }
         Switch(
             checked = checked,

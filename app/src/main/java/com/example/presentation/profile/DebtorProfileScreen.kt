@@ -24,6 +24,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Call
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -134,7 +135,7 @@ fun DebtorProfileScreen(viewModel: HomeViewModel, onBack: () -> Unit) {
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(12.dp))
-                    .background(if (isEditing) Color(0xFFEFF6FF) else Color(0xFFF1F5F9))
+                    .background(if (isEditing) Color(0xFF1D2D44) else Color(0xFF243048))
                     .clickable { isEditing = !isEditing }
                     .padding(horizontal = 14.dp, vertical = 8.dp)
             ) {
@@ -186,7 +187,30 @@ fun DebtorProfileScreen(viewModel: HomeViewModel, onBack: () -> Unit) {
                             // VIEWING MODE
                             ProfileDetailField(label = "Outstanding Amount", value = "₹${"%,.2f".format(currentDebtor.outstandingAmount)}", highlight = true)
                             Spacer(modifier = Modifier.height(10.dp))
-                            ProfileDetailField(label = "Contact Number", value = viewModel.maskPhoneNumber(currentDebtor.phoneNumber))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Box(modifier = Modifier.weight(1f)) {
+                                    ProfileDetailField(label = "Contact Number", value = viewModel.maskPhoneNumber(currentDebtor.phoneNumber))
+                                }
+                                IconButton(
+                                    onClick = { viewModel.initiateCall(currentDebtor) },
+                                    modifier = Modifier
+                                        .size(40.dp)
+                                        .clip(CircleShape)
+                                        .background(Color(0xFF10B981))
+                                        .testTag("dialer_button_profile_header")
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Call,
+                                        contentDescription = "Dial Student Contact",
+                                        tint = Color.White,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                            }
                             Spacer(modifier = Modifier.height(10.dp))
                             ProfileDetailField(label = "Current Address", value = currentDebtor.address)
                             Spacer(modifier = Modifier.height(10.dp))
@@ -293,7 +317,7 @@ fun DebtorProfileScreen(viewModel: HomeViewModel, onBack: () -> Unit) {
                                     modifier = Modifier
                                         .weight(1f)
                                         .clip(RoundedCornerShape(12.dp))
-                                        .background(if (isSelected) Color(0xFFEFF6FF) else Color(0xFFF1F5F9))
+                                        .background(if (isSelected) Color(0xFF1D2D44) else Color(0xFF243048))
                                         .border(1.dp, if (isSelected) primaryBlue else Color.Transparent, RoundedCornerShape(12.dp))
                                         .clickable { inputOutcome = status }
                                         .padding(vertical = 12.dp),
@@ -395,14 +419,14 @@ fun DebtorProfileScreen(viewModel: HomeViewModel, onBack: () -> Unit) {
                                 Box(
                                     modifier = Modifier
                                         .clip(RoundedCornerShape(8.dp))
-                                        .background(if (log.status == "PTP Promised") Color(0xFFD1FAE5) else Color(0xFFFFEDD5))
+                                        .background(if (log.status == "PTP Promised") Color(0xFF065F46) else Color(0xFF9A3412))
                                         .padding(horizontal = 8.dp, vertical = 4.dp)
                                 ) {
                                     Text(
                                         text = log.status,
                                         fontSize = 10.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = if (log.status == "PTP Promised") Color(0xFF047857) else Color(0xFFD97706)
+                                        color = if (log.status == "PTP Promised") Color(0xFF34D399) else Color(0xFFFB923C)
                                     )
                                 }
 
@@ -450,7 +474,7 @@ fun ProfileDetailField(label: String, value: String, highlight: Boolean = false)
             text = value,
             fontSize = if (highlight) 18.sp else 13.sp,
             fontWeight = if (highlight) FontWeight.Bold else FontWeight.Medium,
-            color = if (highlight) Color(0xFF2563EB) else Color(0xFF1E293B),
+            color = if (highlight) Color(0xFF3B82F6) else Color(0xFFF8FAFC),
             modifier = Modifier.padding(top = 2.dp)
         )
     }

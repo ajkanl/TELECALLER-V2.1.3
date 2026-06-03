@@ -10,7 +10,12 @@ data class Debtor(
     val address: String,
     val lastContactDate: String,
     val college: String = "Default College",
-    val remarks: String = ""
+    val remarks: String = "",
+    val father: String = "",
+    val dob: String = "",
+    val course: String = "",
+    val courseSession: String = "",
+    val guardianNumber: String = ""
 )
 
 data class CallRecord(

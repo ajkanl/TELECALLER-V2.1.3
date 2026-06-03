@@ -8,6 +8,8 @@ interface AuthRepository {
 
     suspend fun login(username: String, password: String): Result<Unit>
     suspend fun register(username: String, password: String): Result<Unit>
+    suspend fun loginWithGoogle(email: String): Result<Unit>
+    suspend fun loginWithPhone(phoneNumber: String): Result<Unit>
     suspend fun registerTelecallerWithoutLogin(
         username: String,
         password: String,

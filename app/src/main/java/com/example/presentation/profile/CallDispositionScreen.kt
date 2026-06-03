@@ -57,6 +57,12 @@ fun CallDispositionScreen(
     var ptpAmount by remember { mutableStateOf("") }
     var notesText by remember { mutableStateOf("") }
 
+    // Student detail states (Editable at end of call)
+    var studentName by remember { mutableStateOf(debtor.name) }
+    var studentMobile by remember { mutableStateOf(debtor.phoneNumber) }
+    var studentGuardian by remember { mutableStateOf(debtor.guardianNumber) }
+    var studentDues by remember { mutableStateOf(if (debtor.outstandingAmount == 0.0) "" else debtor.outstandingAmount.toString()) }
+
     // Constants for color harmony
     val primaryBlue = Color(0xFF3B82F6)
     val textSlateColor = Color(0xFFF8FAFC)
@@ -80,8 +86,10 @@ fun CallDispositionScreen(
 
     // Validation checks
     val isPtp = selectedOutcome == "Promise to Pay (PTP)"
-    val isFormValid = remember(selectedOutcome, ptpDate, ptpAmount) {
-        if (selectedOutcome.isEmpty()) {
+    val isFormValid = remember(selectedOutcome, ptpDate, ptpAmount, studentName, studentMobile) {
+        if (studentName.isBlank() || studentMobile.isBlank()) {
+            false
+        } else if (selectedOutcome.isEmpty()) {
             false
         } else if (isPtp) {
             val amountParsed = ptpAmount.toDoubleOrNull()
@@ -167,7 +175,7 @@ fun CallDispositionScreen(
                             Box(
                                 modifier = Modifier
                                     .size(36.dp)
-                                    .background(Color(0xFFEFF6FF), RoundedCornerShape(10.dp)),
+                                    .background(Color(0xFF1D2D44), RoundedCornerShape(10.dp)),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
@@ -219,6 +227,107 @@ fun CallDispositionScreen(
                             )
                         }
                     }
+                }
+            }
+
+            // --- EDITABLE STUDENT PROFILE & DUES CARD ---
+            Card(
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = cardBackgroundColor),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(1.dp, dividerColor, RoundedCornerShape(16.dp))
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text(
+                        text = "EDIT PROFILE & STUDENT DUES",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = primaryBlue,
+                        letterSpacing = 0.5.sp
+                    )
+
+                    // Student Name Input
+                    OutlinedTextField(
+                        value = studentName,
+                        onValueChange = { studentName = it },
+                        label = { Text("Student/Contact Name") },
+                        placeholder = { Text("Enter student name") },
+                        modifier = Modifier.fillMaxWidth().testTag("edit_student_name_field"),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = primaryBlue,
+                            unfocusedBorderColor = Color(0xFF1E293D),
+                            focusedTextColor = textSlateColor,
+                            unfocusedTextColor = textSlateColor
+                        )
+                    )
+
+                    // Mobile Number Input
+                    OutlinedTextField(
+                        value = studentMobile,
+                        onValueChange = { studentMobile = it },
+                        label = { Text("Mobile Number") },
+                        placeholder = { Text("Enter mobile number") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                        modifier = Modifier.fillMaxWidth().testTag("edit_student_mobile_field"),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = primaryBlue,
+                            unfocusedBorderColor = Color(0xFF1E293D),
+                            focusedTextColor = textSlateColor,
+                            unfocusedTextColor = textSlateColor
+                        )
+                    )
+
+                    // Guardian Number Input
+                    OutlinedTextField(
+                        value = studentGuardian,
+                        onValueChange = { studentGuardian = it },
+                        label = { Text("Guardian / Parent Number") },
+                        placeholder = { Text("Enter guardian number") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                        modifier = Modifier.fillMaxWidth().testTag("edit_student_guardian_field"),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = primaryBlue,
+                            unfocusedBorderColor = Color(0xFF1E293D),
+                            focusedTextColor = textSlateColor,
+                            unfocusedTextColor = textSlateColor
+                        )
+                    )
+
+                    // Student Dues (Outstanding Amount) numerical field
+                    OutlinedTextField(
+                        value = studentDues,
+                        onValueChange = {
+                            if (it.isEmpty() || it.all { char -> char.isDigit() || char == '.' }) {
+                                studentDues = it
+                            }
+                        },
+                        label = { Text("Student Dues (₹)") },
+                        placeholder = { Text("Enter student outstanding dues") },
+                        leadingIcon = {
+                            Text(
+                                text = "₹",
+                                fontWeight = FontWeight.Bold,
+                                color = textSlateMuted,
+                                modifier = Modifier.padding(start = 12.dp, end = 4.dp)
+                            )
+                        },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.fillMaxWidth().testTag("edit_student_dues_field"),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = primaryBlue,
+                            unfocusedBorderColor = Color(0xFF1E293D),
+                            focusedTextColor = textSlateColor,
+                            unfocusedTextColor = textSlateColor
+                        )
+                    )
                 }
             }
 
@@ -330,7 +439,9 @@ fun CallDispositionScreen(
                             shape = RoundedCornerShape(12.dp),
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = primaryBlue,
-                                unfocusedBorderColor = Color(0xFFE2E8F0)
+                                unfocusedBorderColor = Color(0xFF1E293D),
+                                focusedTextColor = textSlateColor,
+                                unfocusedTextColor = textSlateColor
                             )
                         )
 
@@ -359,7 +470,9 @@ fun CallDispositionScreen(
                             shape = RoundedCornerShape(12.dp),
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = primaryBlue,
-                                unfocusedBorderColor = Color(0xFFE2E8F0)
+                                unfocusedBorderColor = Color(0xFF1E293D),
+                                focusedTextColor = textSlateColor,
+                                unfocusedTextColor = textSlateColor
                             )
                         )
                     }
@@ -399,9 +512,11 @@ fun CallDispositionScreen(
                 shape = RoundedCornerShape(16.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = primaryBlue,
-                    unfocusedBorderColor = Color(0xFFE2E8F0),
-                    focusedContainerColor = Color.White,
-                    unfocusedContainerColor = Color.White
+                    unfocusedBorderColor = Color(0xFF1E293D),
+                    focusedContainerColor = Color.Transparent,
+                    unfocusedContainerColor = Color.Transparent,
+                    focusedTextColor = textSlateColor,
+                    unfocusedTextColor = textSlateColor
                 )
             )
 
@@ -410,7 +525,7 @@ fun CallDispositionScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(12.dp))
-                    .background(Color(0xFFFEF3C7))
+                    .background(Color(0xFFF59E0B).copy(alpha = 0.2f))
                     .padding(12.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.Top
@@ -418,13 +533,13 @@ fun CallDispositionScreen(
                 Icon(
                     imageVector = Icons.Default.Info,
                     contentDescription = null,
-                    tint = Color(0xFFD97706),
+                    tint = Color(0xFFFB923C),
                     modifier = Modifier.size(18.dp)
                 )
                 Text(
                     text = "Sync status: Logging after call drop automatically connects to central debt registry once saved.",
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color(0xFF92400E)
+                    color = Color(0xFFFFD180)
                 )
             }
 
@@ -440,22 +555,36 @@ fun CallDispositionScreen(
                             notesText
                         }
 
-                        // Save the Call outcome using the existing ViewModel function
+                        // Generate/Resolve unique clean ID for this student if currently blank
+                        val resolvedId = if (debtor.id.isBlank()) "STU-${System.currentTimeMillis()}" else debtor.id
+
+                        val updatedDebtor = debtor.copy(
+                            id = resolvedId,
+                            name = studentName,
+                            phoneNumber = studentMobile,
+                            guardianNumber = studentGuardian,
+                            outstandingAmount = studentDues.toDoubleOrNull() ?: 0.0
+                        )
+
+                        // 1. Save and Upsert Student Profile (syncs to both databases)
+                        viewModel.updateDebtorProfile(updatedDebtor)
+
+                        // 2. Add Call Log connected with patient/student record
                         viewModel.addCallLogEntry(
-                            debtorId = debtor.id,
-                            debtorName = debtor.name,
+                            debtorId = resolvedId,
+                            debtorName = studentName,
                             outcome = selectedOutcome,
                             notes = finalNotes
                         )
 
-                        Toast.makeText(context, "Log synced successfully!", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Log and profile updated successfully!", Toast.LENGTH_SHORT).show()
                         onDismiss()
                     }
                 },
                 enabled = isFormValid,
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = if (isFormValid) Color(0xFF10B981) else Color(0xFF94A3B8),
-                    disabledContainerColor = Color(0xFFCBD5E1)
+                    containerColor = if (isFormValid) Color(0xFF10B981) else Color(0xFF1E293D),
+                    disabledContainerColor = Color(0xFF101B2E)
                 ),
                 modifier = Modifier
                     .fillMaxWidth()

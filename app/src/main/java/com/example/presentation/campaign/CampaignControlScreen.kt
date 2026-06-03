@@ -49,9 +49,9 @@ fun CampaignControlScreen(
     var sourceExpanded by remember { mutableStateOf(false) }
     var targetExpanded by remember { mutableStateOf(false) }
 
-    val primaryBlue = Color(0xFF2563EB)
-    val textSlateColor = Color(0xFF1E293B)
-    val textSlateMuted = Color(0xFF64748B)
+    val primaryBlue = Color(0xFF3B82F6)
+    val textSlateColor = Color(0xFFF8FAFC)
+    val textSlateMuted = Color(0xFF94A3B8)
     val accentRed = Color(0xFFEF4444)
     val successGreen = Color(0xFF10B981)
 
@@ -91,17 +91,17 @@ fun CampaignControlScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.White,
+                    containerColor = Color(0xFF090F1C),
                     titleContentColor = textSlateColor
                 ),
-                modifier = Modifier.border(1.dp, Color(0xFFF1F5F9))
+                modifier = Modifier.border(1.dp, Color(0xFF1E293D))
             )
         }
     ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color(0xFFF8FAFC))
+                .background(Color(0xFF090F1C))
                 .padding(innerPadding)
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp),
@@ -145,10 +145,10 @@ fun CampaignControlScreen(
                     items(metrics) { metric ->
                         Card(
                             shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color.White),
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFF172033)),
                             modifier = Modifier
                                 .width(220.dp)
-                                .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(16.dp))
+                                .border(1.dp, Color(0xFF1E293D), RoundedCornerShape(16.dp))
                         ) {
                             Column(modifier = Modifier.padding(14.dp)) {
                                 Row(
@@ -202,7 +202,7 @@ fun CampaignControlScreen(
                                     LinearProgressIndicator(
                                         progress = { metric.recoveryRate / 100f },
                                         color = Color(metric.colorHex),
-                                        trackColor = Color(0xFFF1F5F9),
+                                        trackColor = Color(0xFF1E293D),
                                         modifier = Modifier
                                             .weight(1f)
                                             .height(6.dp)
@@ -226,12 +226,12 @@ fun CampaignControlScreen(
             Card(
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = if (isFreezeEnabled) Color(0xFFFFF1F2) else Color.White
+                    containerColor = if (isFreezeEnabled) Color(0xFF451A03) else Color(0xFF172033)
                 ),
                 modifier = Modifier
                     .fillMaxWidth()
                     .border(
-                        BorderStroke(1.dp, if (isFreezeEnabled) Color(0xFFFECDD3) else Color(0xFFE2E8F0)),
+                        BorderStroke(1.dp, if (isFreezeEnabled) Color(0xFFF59E0B) else Color(0xFF1E293D)),
                         RoundedCornerShape(16.dp)
                     )
             ) {
@@ -246,7 +246,7 @@ fun CampaignControlScreen(
                         modifier = Modifier
                             .size(44.dp)
                             .background(
-                                if (isFreezeEnabled) Color(0xFFFECDD3) else Color(0xFFEFF6FF),
+                                if (isFreezeEnabled) Color(0xFF3B1E08) else Color(0xFF1D2D44),
                                 CircleShape
                             ),
                         contentAlignment = Alignment.Center
@@ -306,10 +306,10 @@ fun CampaignControlScreen(
             // --- SECTION 3: DYNAMIC LEAD RE-ALLOCATION WORKFLOW ---
             Card(
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF172033)),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(16.dp))
+                    .border(1.dp, Color(0xFF1E293D), RoundedCornerShape(16.dp))
             ) {
                 Column(
                     modifier = Modifier.padding(16.dp),
@@ -338,7 +338,7 @@ fun CampaignControlScreen(
                         color = textSlateMuted
                     )
 
-                    HorizontalDivider(color = Color(0xFFF1F5F9))
+                    HorizontalDivider(color = Color(0xFF1E293D))
 
                     // Dropdown A: Select Source DPD Pool
                     Text(
@@ -366,7 +366,9 @@ fun CampaignControlScreen(
                                 .testTag("source_pool_dropdown_trigger"),
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = primaryBlue,
-                                unfocusedBorderColor = Color(0xFFCBD5E1)
+                                unfocusedBorderColor = Color(0xFF1E293D),
+                                focusedTextColor = textSlateColor,
+                                unfocusedTextColor = textSlateColor
                             )
                         )
                         ExposedDropdownMenu(
@@ -411,7 +413,9 @@ fun CampaignControlScreen(
                                 .testTag("target_agent_dropdown_trigger"),
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = primaryBlue,
-                                unfocusedBorderColor = Color(0xFFCBD5E1)
+                                unfocusedBorderColor = Color(0xFF1E293D),
+                                focusedTextColor = textSlateColor,
+                                unfocusedTextColor = textSlateColor
                             )
                         )
                         ExposedDropdownMenu(

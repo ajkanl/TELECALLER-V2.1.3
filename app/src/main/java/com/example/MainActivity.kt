@@ -1,6 +1,9 @@
 package com.example
 
 import android.os.Bundle
+import android.content.Intent
+import android.net.Uri
+import kotlinx.coroutines.flow.collectLatest
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -210,6 +213,59 @@ class MainActivity : ComponentActivity() {
                         val isLoggedIn by authViewModel.isLoggedIn.collectAsState()
                         val selectedDebtor by homeViewModel.selectedDebtor.collectAsState()
                         val dispositionDebtor by homeViewModel.dispositionDebtor.collectAsState()
+
+                        LaunchedEffect(homeViewModel) {
+                            homeViewModel.dialerEvents.collectLatest { phoneNumber ->
+                                try {
+                                    val dialIntent = Intent(Intent.ACTION_DIAL).apply {
+                                        data = Uri.parse("tel:$phoneNumber")
+                                    }
+                                    context.startActivity(dialIntent)
+                                } catch (e: Exception) {
+                                    android.widget.Toast.makeText(context, "Could not open dialer", android.widget.Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        }
+
+                        LaunchedEffect(homeViewModel) {
+                            com.example.data.util.CallEndTracker.callEndedEvents.collectLatest { event ->
+                                try {
+                                    val cleanedEventNum = event.phoneNumber.replace(Regex("[^0-9]"), "")
+                                    val allDebtorsList = homeViewModel.debtors.value
+                                    val matched = allDebtorsList.find { debtor ->
+                                        val mainNum = debtor.phoneNumber.replace(Regex("[^0-9]"), "")
+                                        val altNum = debtor.guardianNumber.replace(Regex("[^0-9]"), "")
+                                        (mainNum.isNotEmpty() && (mainNum.endsWith(cleanedEventNum) || cleanedEventNum.endsWith(mainNum))) ||
+                                        (altNum.isNotEmpty() && (altNum.endsWith(cleanedEventNum) || cleanedEventNum.endsWith(altNum)))
+                                    }
+                                    if (matched != null) {
+                                        homeViewModel.selectDispositionDebtor(matched)
+                                    } else {
+                                        // Unmapped/personal call!
+                                        val temp = com.example.domain.model.Debtor(
+                                            id = "", // is blank for new mapping
+                                            name = "Unknown Student",
+                                            overdueDays = 0,
+                                            outstandingAmount = 0.0,
+                                            customerSegment = "Personal / Unmapped Call",
+                                            phoneNumber = event.phoneNumber,
+                                            address = "",
+                                            lastContactDate = "Never",
+                                            college = "",
+                                            remarks = "Captured call from device dialer.",
+                                            father = "",
+                                            dob = "",
+                                            course = "GNM",
+                                            courseSession = "2024-2027",
+                                            guardianNumber = ""
+                                        )
+                                        homeViewModel.selectDispositionDebtor(temp)
+                                    }
+                                } catch (e: Exception) {
+                                    android.util.Log.e("MainActivity", "Call end dispatch event failed", e)
+                                }
+                            }
+                        }
 
                         val isScreenshotBlockEnabled by securityViewModel.isScreenshotBlockEnabled.collectAsState()
                         LaunchedEffect(isScreenshotBlockEnabled) {
