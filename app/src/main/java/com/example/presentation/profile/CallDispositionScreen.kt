@@ -794,11 +794,16 @@ fun CallDispositionScreen(
                         viewModel.updateDebtorProfile(updatedDebtor)
 
                         // 2. Add Call Log connected with patient/student record
+                        val parsedPtpAmt = if (selectedOutcome == "Promise to Pay (PTP)") ptpAmount.toDoubleOrNull() else null
+                        val parsedPtpDate = if (selectedOutcome == "Promise to Pay (PTP)") ptpDate else null
+
                         viewModel.addCallLogEntry(
                             debtorId = resolvedId,
                             debtorName = studentName,
                             outcome = selectedOutcome,
-                            notes = finalNotes
+                            notes = finalNotes,
+                            ptpDate = parsedPtpDate,
+                            ptpAmount = parsedPtpAmt
                         )
 
                         Toast.makeText(context, "Log and profile updated successfully!", Toast.LENGTH_SHORT).show()

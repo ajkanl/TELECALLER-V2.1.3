@@ -63,21 +63,21 @@ class DataSyncViewModel @Inject constructor(
     val syncFrequencyIndex: StateFlow<Int> = store.syncFrequencyIndex
     val cacheExpiryThreshold: StateFlow<String> = store.cacheExpiryThreshold
 
-    val allDebtorsList: StateFlow<List<DebtorEntity>> = database.collectionDao().getAllDebtorsList()
+    val allDebtorsList: StateFlow<List<DebtorEntity>> = collectionDatabase.collectionDao().getAllDebtorsList()
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = emptyList()
         )
 
-    val allCallLogsList: StateFlow<List<CallLogEntity>> = database.collectionDao().getAllCallLogsList()
+    val allCallLogsList: StateFlow<List<CallLogEntity>> = collectionDatabase.collectionDao().getAllCallLogsList()
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = emptyList()
         )
 
-    val allPromisesList: StateFlow<List<PromiseToPayEntity>> = database.collectionDao().getAllPromisesToPay()
+    val allPromisesList: StateFlow<List<PromiseToPayEntity>> = collectionDatabase.collectionDao().getAllPromisesToPay()
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
@@ -118,9 +118,9 @@ class DataSyncViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 combine(
-                    database.collectionDao().getAllDebtorsList(),
-                    database.collectionDao().getAllCallLogsList(),
-                    database.collectionDao().getAllPromisesToPay(),
+                    collectionDatabase.collectionDao().getAllDebtorsList(),
+                    collectionDatabase.collectionDao().getAllCallLogsList(),
+                    collectionDatabase.collectionDao().getAllPromisesToPay(),
                     securitySettingsStore.telecallersList
                 ) { debtors, calls, promises, telecallers ->
                     listOf(debtors.size, calls.size, promises.size, telecallers.hashCode())
@@ -152,7 +152,7 @@ class DataSyncViewModel @Inject constructor(
 
         viewModelScope.launch {
             try {
-                val collectionDao = database.collectionDao()
+                val collectionDao = collectionDatabase.collectionDao()
                 val debtorsList = collectionDao.getDebtorsDirect()
                 val callLogsList = collectionDao.getCallLogsDirect()
                 val promisesList = collectionDao.getPromisesToPayDirect()
@@ -194,7 +194,7 @@ class DataSyncViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 // Fetch local records from separate categories
-                val collectionDao = database.collectionDao()
+                val collectionDao = collectionDatabase.collectionDao()
                 val debtorsList = collectionDao.getDebtorsDirect()
                 val callLogsList = collectionDao.getCallLogsDirect()
                 val promisesList = collectionDao.getPromisesToPayDirect()

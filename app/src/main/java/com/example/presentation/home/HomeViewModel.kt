@@ -262,7 +262,14 @@ class HomeViewModel @Inject constructor(
 
     fun getCallLogsForDebtor(debtorId: String) = repository.getCallLogsForDebtor(debtorId)
 
-    fun addCallLogEntry(debtorId: String, debtorName: String, outcome: String, notes: String) {
+    fun addCallLogEntry(
+        debtorId: String,
+        debtorName: String,
+        outcome: String,
+        notes: String,
+        ptpDate: String? = null,
+        ptpAmount: Double? = null
+    ) {
         viewModelScope.launch {
             val currentDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
             val currentTime = SimpleDateFormat("hh:mm a", Locale.getDefault()).format(Date())
@@ -277,7 +284,9 @@ class HomeViewModel @Inject constructor(
                 outcome = outcome,
                 notes = notes,
                 agentId = agentId,
-                agentName = agentName
+                agentName = agentName,
+                ptpDate = ptpDate,
+                ptpAmount = ptpAmount
             )
             val updatedDebtor = _selectedDebtor.value?.copy(lastContactDate = "0 Days Ago")
             if (updatedDebtor != null) {

@@ -15,5 +15,5 @@ interface DebtorRepository {
     // Detailed Profile Editing & Room database persistence
     suspend fun updateDebtor(debtor: Debtor)
     fun getCallLogsForDebtor(debtorId: String): Flow<List<CallRecord>>
-    suspend fun saveCallLog(debtorId: String, debtorName: String, date: String, time: String, outcome: String, notes: String, agentId: String = "T01", agentName: String = "Rajesh Kumar")
+    suspend fun saveCallLog(debtorId: String, debtorName: String, date: String, time: String, outcome: String, notes: String, agentId: String = "T01", agentName: String = "Rajesh Kumar", ptpDate: String? = null, ptpAmount: Double? = null)
 }

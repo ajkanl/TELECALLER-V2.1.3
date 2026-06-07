@@ -49,7 +49,7 @@ interface CollectionDao {
      * 5. Insert or update a 'PromiseToPayEntity'.
      */
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertOrUpdatePromiseToPay(promiseToPay: PromiseToPayEntity)
+    suspend fun insertOrUpdatePromiseToPay(promiseToPay: PromiseToPayEntity): Long
 
     /**
      * 6. Custom @Query to fetch all 'PromiseToPayEntity' records where 'promisedPaymentDate' matches

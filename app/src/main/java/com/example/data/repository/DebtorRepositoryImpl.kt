@@ -5,6 +5,7 @@ import com.example.data.local.dao.CallLogDao
 import com.example.data.local.dao.DebtorDao
 import com.example.data.local.entity.CallLogEntity
 import com.example.data.local.entity.DebtorEntity
+import com.example.data.local.entity.PromiseToPayEntity
 import com.example.domain.model.CallRecord
 import com.example.domain.model.Debtor
 import com.example.domain.repository.DebtorRepository
@@ -184,6 +185,7 @@ vaibhav khatri;Satish;2005-12-16;;GNM;2024-2027;83;8798598678;8295382085
             notes = notes
         )
         callLogDao.insertCallLog(newCall)
+        collectionDao.insertCallLog(newCall)
 
         // Increment daily call progress count
         val currentPair = dailyProgress.value
@@ -268,7 +270,9 @@ vaibhav khatri;Satish;2005-12-16;;GNM;2024-2027;83;8798598678;8295382085
         outcome: String,
         notes: String,
         agentId: String,
-        agentName: String
+        agentName: String,
+        ptpDate: String?,
+        ptpAmount: Double?
     ) {
         val derivedCallType = if (notes.contains("[Type: INBOUND]")) "INBOUND" else "OUTBOUND"
         val newCallLog = CallLogEntity(
@@ -288,8 +292,35 @@ vaibhav khatri;Satish;2005-12-16;;GNM;2024-2027;83;8798598678;8295382085
             agentName = agentName
         )
         callLogDao.insertCallLog(newCallLog)
+        collectionDao.insertCallLog(newCallLog)
 
-        // Live Cloud Synchronization (Telecaller & Remarks Wise)
+        // Parse and check if we have a Promise-To-Pay (PTP) commitment
+        val ptpTimestamp = ptpDate?.let {
+            try {
+                SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(it)?.time
+            } catch (e: Exception) {
+                null
+            }
+        } ?: if (outcome == "Promise to Pay (PTP)" || outcome == "PTP Promised") {
+            System.currentTimeMillis() + 86400000L * 3 // Default 3 days in future
+        } else {
+            null
+        }
+
+        var ptpEntityId: Long = 0L
+        if (ptpTimestamp != null) {
+            val amount = ptpAmount ?: 15000.0
+            val pEntity = PromiseToPayEntity(
+                debtorId = debtorId,
+                ptpCreationTimestamp = System.currentTimeMillis(),
+                promisedPaymentDate = ptpTimestamp,
+                promisedAmount = amount,
+                ptpStatus = "ACTIVE"
+            )
+            ptpEntityId = collectionDao.insertOrUpdatePromiseToPay(pEntity)
+        }
+
+        // Live Cloud Synchronization (Telecaller & Remarks Wise + Live PTP Tracker)
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val db = com.google.firebase.firestore.FirebaseFirestore.getInstance()
@@ -321,11 +352,36 @@ vaibhav khatri;Satish;2005-12-16;;GNM;2024-2027;83;8798598678;8295382085
                 )
                 callDocRef.set(callDetailData)
 
+                // Upload Promise to Firestore live
+                if (ptpTimestamp != null && ptpEntityId > 0) {
+                    val ptpDocRef = db.collection("promises_to_pay").document(ptpEntityId.toString())
+                    val ptpDataForCloud = mapOf(
+                        "ptpId" to ptpEntityId,
+                        "debtorId" to debtorId,
+                        "ptpCreationTimestamp" to System.currentTimeMillis(),
+                        "promisedPaymentDate" to ptpTimestamp,
+                        "promisedAmount" to (ptpAmount ?: 15000.0),
+                        "ptpStatus" to "ACTIVE"
+                    )
+                    ptpDocRef.set(ptpDataForCloud)
+                }
+
                 // RTDB Synchronous mirror copy
                 try {
                     val rtdb = com.example.data.util.FirebaseDatabaseConnector.getInstance()
                     if (rtdb != null) {
                         rtdb.reference.child("telecaller_remarks_wise").child(agentId).child(rawSlug).child(newCallLog.id).setValue(callDetailData)
+                        if (ptpTimestamp != null && ptpEntityId > 0) {
+                            val rtdbPtpData = mapOf(
+                                "ptpId" to ptpEntityId,
+                                "debtorId" to debtorId,
+                                "ptpCreationTimestamp" to System.currentTimeMillis(),
+                                "promisedPaymentDate" to ptpTimestamp,
+                                "promisedAmount" to (ptpAmount ?: 15000.0),
+                                "ptpStatus" to "ACTIVE"
+                            )
+                            rtdb.reference.child("promises_to_pay").child(ptpEntityId.toString()).setValue(rtdbPtpData)
+                        }
                     }
                 } catch (rtdbEx: Exception) {
                     Log.e("FirebaseSync", "RTDB Live upload skipped/failed: ${rtdbEx.message}")
@@ -340,8 +396,8 @@ vaibhav khatri;Satish;2005-12-16;;GNM;2024-2027;83;8798598678;8295382085
         dailyProgress.value = Pair(currentPair.first + 1, currentPair.second)
 
         // Mock payment recovery update if status is PTP Promised
-        if (outcome == "PTP Promised") {
-            recoveredAmount.value += 15000.00
+        if (outcome == "PTP Promised" || outcome == "Promise to Pay (PTP)") {
+            recoveredAmount.value += (ptpAmount ?: 15000.0)
         }
 
         // Update last contacted status
