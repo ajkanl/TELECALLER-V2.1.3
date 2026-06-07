@@ -5,6 +5,7 @@ import com.example.data.local.entity.CallLogEntity
 import com.example.data.local.entity.DebtorEntity
 import com.example.data.local.entity.PromiseToPayEntity
 import com.example.data.local.entity.PromiseToPayWithDebtor
+import com.example.data.local.entity.PaymentHistoryEntity
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -84,6 +85,15 @@ interface CollectionDao {
 
     @Query("SELECT * FROM call_logs")
     suspend fun getCallLogsDirect(): List<CallLogEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertPayment(payment: PaymentHistoryEntity)
+
+    @Query("SELECT * FROM payment_history WHERE debtorId = :debtorId ORDER BY paymentDate DESC")
+    fun getPaymentsForDebtor(debtorId: String): Flow<List<PaymentHistoryEntity>>
+
+    @Query("SELECT * FROM payment_history")
+    fun getAllPaymentsFlow(): Flow<List<PaymentHistoryEntity>>
 
     /**
      * Fetch debtors eligible for the active calling queue based on strict business timing constraints.

@@ -55,6 +55,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.domain.model.Debtor
 import com.example.presentation.home.HomeViewModel
+import com.example.data.local.entity.PaymentHistoryEntity
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @Composable
 fun DebtorProfileScreen(viewModel: HomeViewModel, onBack: () -> Unit) {
@@ -86,6 +90,19 @@ fun DebtorProfileScreen(viewModel: HomeViewModel, onBack: () -> Unit) {
     // Form states for adding new call logs/notes
     var inputOutcome by remember { mutableStateOf("Not Picked Up") }
     var inputNotes by remember { mutableStateOf("") }
+
+    // Form states for adding new payments
+    var payType by remember { mutableStateOf("CASH") } // "CASH", "ONLINE", "CHEQUE"
+    var payAmount by remember { mutableStateOf("") }
+    var payUtr by remember { mutableStateOf("") }
+    var payChequeNum by remember { mutableStateOf("") }
+    
+    val payDateFormat = remember { SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()) }
+    val todayDateString = remember { payDateFormat.format(Date()) }
+    var payChequeCashingDate by remember { mutableStateOf(todayDateString) }
+    var payRemarks by remember { mutableStateOf("") }
+
+    val paymentList by viewModel.getPaymentsForDebtor(currentDebtor.id).collectAsState(initial = emptyList())
 
     val primaryBlue = Color(0xFF3B82F6)
     val textSlateColor = Color(0xFFF8FAFC)
@@ -490,6 +507,299 @@ fun DebtorProfileScreen(viewModel: HomeViewModel, onBack: () -> Unit) {
                 }
             }
 
+            // --- RECORD STUDENT PAYMENT HISTORY ---
+            item {
+                Card(
+                    shape = RoundedCornerShape(24.dp),
+                    colors = CardDefaults.cardColors(containerColor = cardBackgroundColor),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .border(1.dp, dividerColor, RoundedCornerShape(24.dp))
+                ) {
+                    Column(modifier = Modifier.padding(20.dp)) {
+                        Text(
+                            text = "RECORD STUDENT PAYMENT",
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = textSlateMuted,
+                            letterSpacing = 0.5.sp
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        // Type buttons (CASH, ONLINE WITH UTR, CHEQUE WITH DETAILS)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            listOf("CASH", "ONLINE", "CHEQUE").forEach { type ->
+                                val isSelected = payType == type
+                                Box(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .background(if (isSelected) Color(0xFF1D2D44) else Color(0xFF243048))
+                                        .border(1.dp, if (isSelected) primaryBlue else Color.Transparent, RoundedCornerShape(12.dp))
+                                        .clickable { payType = type }
+                                        .padding(vertical = 10.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = type,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (isSelected) primaryBlue else textSlateColor
+                                    )
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        OutlinedTextField(
+                            value = payAmount,
+                            onValueChange = { payAmount = it },
+                            label = { Text("Amount (₹)", fontSize = 11.sp) },
+                            placeholder = { Text("Enter payment amount") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = primaryBlue)
+                        )
+
+                        if (payType == "ONLINE") {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            OutlinedTextField(
+                                value = payUtr,
+                                onValueChange = { payUtr = it },
+                                label = { Text("UTR Transaction Number", fontSize = 11.sp) },
+                                placeholder = { Text("Enter UTR number") },
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = primaryBlue)
+                            )
+                        }
+
+                        if (payType == "CHEQUE") {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            OutlinedTextField(
+                                value = payChequeNum,
+                                onValueChange = { payChequeNum = it },
+                                label = { Text("Cheque Number", fontSize = 11.sp) },
+                                placeholder = { Text("Enter cheque number") },
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = primaryBlue)
+                            )
+
+                            Spacer(modifier = Modifier.height(8.dp))
+                            OutlinedTextField(
+                                value = payChequeCashingDate,
+                                onValueChange = { payChequeCashingDate = it },
+                                label = { Text("Cheque Cashing Date (YYYY-MM-DD)", fontSize = 11.sp) },
+                                placeholder = { Text("YYYY-MM-DD") },
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = primaryBlue)
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedTextField(
+                            value = payRemarks,
+                            onValueChange = { payRemarks = it },
+                            label = { Text("Remarks", fontSize = 11.sp) },
+                            placeholder = { Text("Add any extra notes...") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = primaryBlue)
+                        )
+
+                        Spacer(modifier = Modifier.height(14.dp))
+
+                        Button(
+                            onClick = {
+                                val amt = payAmount.toDoubleOrNull()
+                                if (amt == null || amt <= 0) {
+                                    Toast.makeText(context, "Please enter a valid amount", Toast.LENGTH_SHORT).show()
+                                    return@Button
+                                }
+                                
+                                var cashingTime: Long? = null
+                                if (payType == "CHEQUE") {
+                                    if (payChequeNum.isBlank()) {
+                                        Toast.makeText(context, "Please enter cheque number", Toast.LENGTH_SHORT).show()
+                                        return@Button
+                                    }
+                                    try {
+                                        val d = payDateFormat.parse(payChequeCashingDate.trim())
+                                        if (d != null) {
+                                            cashingTime = d.time
+                                        }
+                                    } catch (e: Exception) {
+                                        Toast.makeText(context, "Invalid date format. Use YYYY-MM-DD", Toast.LENGTH_SHORT).show()
+                                        return@Button
+                                    }
+                                }
+
+                                if (payType == "ONLINE" && payUtr.isBlank()) {
+                                    Toast.makeText(context, "Please enter UTR number", Toast.LENGTH_SHORT).show()
+                                    return@Button
+                                }
+
+                                viewModel.recordPayment(
+                                    debtorId = currentDebtor.id,
+                                    paymentType = payType,
+                                    amount = amt,
+                                    utrNumber = if (payType == "ONLINE") payUtr.trim() else null,
+                                    chequeNumber = if (payType == "CHEQUE") payChequeNum.trim() else null,
+                                    chequeCashingDate = cashingTime,
+                                    remarks = payRemarks.trim()
+                                )
+
+                                Toast.makeText(context, "Payment logged successfully!", Toast.LENGTH_SHORT).show()
+                                payAmount = ""
+                                payUtr = ""
+                                payChequeNum = ""
+                                payRemarks = ""
+                                payChequeCashingDate = todayDateString
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = primaryBlue),
+                            modifier = Modifier.fillMaxWidth().height(44.dp),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Text("Record Payment & Log", fontWeight = FontWeight.Bold, color = Color.White, fontSize = 12.sp)
+                        }
+                    }
+                }
+            }
+
+            // --- RECORDED PAYMENTS BOOK ---
+            item {
+                Text(
+                    text = "Payment Log Book",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = textSlateColor,
+                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 6.dp)
+                )
+            }
+
+            if (paymentList.isEmpty()) {
+                item {
+                    Card(
+                        shape = RoundedCornerShape(20.dp),
+                        colors = CardDefaults.cardColors(containerColor = cardBackgroundColor),
+                        modifier = Modifier.fillMaxWidth().border(1.dp, dividerColor, RoundedCornerShape(20.dp))
+                    ) {
+                        Text(
+                            text = "No recorded payments for this student.",
+                            fontSize = 12.sp,
+                            color = textSlateMuted,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth().padding(24.dp)
+                        )
+                    }
+                }
+            } else {
+                items(paymentList) { payment ->
+                    Card(
+                        shape = RoundedCornerShape(20.dp),
+                        colors = CardDefaults.cardColors(containerColor = cardBackgroundColor),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .border(1.dp, dividerColor, RoundedCornerShape(20.dp))
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(
+                                            when (payment.paymentType) {
+                                                "CASH" -> Color(0xFF065F46)
+                                                "ONLINE" -> Color(0xFF1E3A8A)
+                                                else -> Color(0xFF854D0E)
+                                            }
+                                        )
+                                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                                ) {
+                                    Text(
+                                        text = payment.paymentType,
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = when (payment.paymentType) {
+                                            "CASH" -> Color(0xFF34D399)
+                                            "ONLINE" -> Color(0xFF60A5FA)
+                                            else -> Color(0xFFFBBF24)
+                                        }
+                                    )
+                                }
+
+                                Text(
+                                    text = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date(payment.paymentDate)),
+                                    fontSize = 11.sp,
+                                    color = textSlateMuted
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(10.dp))
+                            Text(
+                                text = "Amount: ₹${"%,.2f".format(payment.amount)}",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = textSlateColor
+                            )
+
+                            if (payment.paymentType == "ONLINE") {
+                                payment.utrNumber?.let { utr ->
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = "UTR: $utr",
+                                        fontSize = 12.sp,
+                                        color = textSlateMuted,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                }
+                            }
+
+                            if (payment.paymentType == "CHEQUE") {
+                                payment.chequeNumber?.let { chq ->
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = "Cheque Number: $chq",
+                                        fontSize = 12.sp,
+                                        color = textSlateMuted,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                }
+                                payment.chequeCashingDate?.let { cashingTs ->
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    val formattedCashing = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date(cashingTs))
+                                    Text(
+                                        text = "Cheque Cashing Date: $formattedCashing",
+                                        fontSize = 12.sp,
+                                        color = Color(0xFFFBBF24),
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+
+                            if (payment.remarks.isNotBlank()) {
+                                Spacer(modifier = Modifier.height(6.dp))
+                                Text(
+                                    text = "Remarks: ${payment.remarks}",
+                                    fontSize = 12.sp,
+                                    color = textSlateColor
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
             // --- HISTORICAL CALL LOGS CHRONOLOGICAL DISPLAY ---
             item {
                 Text(
@@ -497,7 +807,7 @@ fun DebtorProfileScreen(viewModel: HomeViewModel, onBack: () -> Unit) {
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
                     color = textSlateColor,
-                    modifier = Modifier.padding(horizontal = 4.dp)
+                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 6.dp)
                 )
             }
 

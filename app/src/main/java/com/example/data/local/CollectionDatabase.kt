@@ -9,6 +9,7 @@ import com.example.data.local.dao.CollectionDao
 import com.example.data.local.entity.CallLogEntity
 import com.example.data.local.entity.DebtorEntity
 import com.example.data.local.entity.PromiseToPayEntity
+import com.example.data.local.entity.PaymentHistoryEntity
 
 /**
  * Modern Jetpack Room Database configuration for Recovery Applet collections.
@@ -18,9 +19,10 @@ import com.example.data.local.entity.PromiseToPayEntity
     entities = [
         DebtorEntity::class,
         CallLogEntity::class,
-        PromiseToPayEntity::class
+        PromiseToPayEntity::class,
+        PaymentHistoryEntity::class
     ],
-    version = 4,
+    version = 5,
     exportSchema = false
 )
 @TypeConverters(RoomTypeConverters::class)

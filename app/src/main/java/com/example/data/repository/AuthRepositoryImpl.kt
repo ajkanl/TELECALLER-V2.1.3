@@ -68,17 +68,18 @@ class AuthRepositoryImpl @Inject constructor(
         if (password.length < 4) {
             return Result.failure(Exception("Password must be at least 4 characters"))
         }
-        val existing = userDao.getUserByUsername(trimmedUser)
-        if (existing != null) {
-            return Result.failure(Exception("Username is already taken"))
-        }
-        
         val isEmail = trimmedUser.contains("@")
         val isPhone = trimmedUser.replace(Regex("[^\\d+]"), "").length >= 10
         val finalEmail = if (isEmail) trimmedUser.lowercase() else ""
         val finalPhone = if (isPhone) trimmedUser else ""
         val finalUsername = if (isEmail) trimmedUser.substringBefore("@") else trimmedUser
         val isAdminUser = trimmedUser.contains("admin") || finalEmail == "armankumar.singh24@gmail.com"
+
+        val existingByTrimmed = userDao.getUserByUsername(trimmedUser)
+        val existingByFinal = userDao.getUserByUsername(finalUsername)
+        if (existingByTrimmed != null || existingByFinal != null) {
+            return Result.failure(Exception("Username is already taken"))
+        }
 
         val newUser = UserEntity(
             username = finalUsername,

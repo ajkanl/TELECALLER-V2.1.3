@@ -10,10 +10,17 @@ import com.example.data.local.entity.CallLogEntity
 import com.example.data.local.entity.DebtorEntity
 import com.example.data.local.entity.UserEntity
 import com.example.data.local.entity.PromiseToPayEntity
+import com.example.data.local.entity.PaymentHistoryEntity
 
 @Database(
-    entities = [UserEntity::class, DebtorEntity::class, CallLogEntity::class, PromiseToPayEntity::class],
-    version = 6,
+    entities = [
+        UserEntity::class,
+        DebtorEntity::class,
+        CallLogEntity::class,
+        PromiseToPayEntity::class,
+        PaymentHistoryEntity::class
+    ],
+    version = 7,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

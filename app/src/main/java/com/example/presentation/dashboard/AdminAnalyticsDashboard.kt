@@ -58,6 +58,7 @@ fun AdminAnalyticsDashboard(
     homeViewModel: HomeViewModel,
     onBack: () -> Unit
 ) {
+    val context = androidx.compose.ui.platform.LocalContext.current
     // Premium Design Palette
     val backgroundBg = Color(0xFF090F1C)
     val webChromeHeaderBg = Color(0xFF131B2A)
@@ -1206,6 +1207,7 @@ fun AdminAnalyticsDashboard(
                                 isAdmin = newAgentIsAdmin
                             ) { result ->
                                 if (result.isSuccess) {
+                                    android.widget.Toast.makeText(context, "New user created successfully!", android.widget.Toast.LENGTH_SHORT).show()
                                     newAgentName = ""
                                     newAgentPassword = ""
                                     newAgentPhone = ""

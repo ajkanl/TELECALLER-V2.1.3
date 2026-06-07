@@ -15,6 +15,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -23,6 +25,9 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import javax.inject.Inject
+import com.example.data.local.entity.PaymentHistoryEntity
+import com.example.data.local.entity.PromiseToPayEntity
+import com.example.data.local.entity.DebtorEntity
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
@@ -293,5 +298,88 @@ class HomeViewModel @Inject constructor(
                 _selectedDebtor.value = updatedDebtor
             }
         }
+    }
+
+    private fun getStartOfToday(): Long {
+        val cal = java.util.Calendar.getInstance()
+        cal.set(java.util.Calendar.HOUR_OF_DAY, 0)
+        cal.set(java.util.Calendar.MINUTE, 0)
+        cal.set(java.util.Calendar.SECOND, 0)
+        cal.set(java.util.Calendar.MILLISECOND, 0)
+        return cal.timeInMillis
+    }
+
+    private fun getEndOfToday(): Long {
+        val cal = java.util.Calendar.getInstance()
+        cal.set(java.util.Calendar.HOUR_OF_DAY, 23)
+        cal.set(java.util.Calendar.MINUTE, 59)
+        cal.set(java.util.Calendar.SECOND, 59)
+        cal.set(java.util.Calendar.MILLISECOND, 999)
+        return cal.timeInMillis
+    }
+
+    val todayReminders: StateFlow<List<String>> = combine(
+        collectionDao.getAllPaymentsFlow(),
+        collectionDao.getAllPromisesToPay(),
+        debtorDao.getAllDebtors()
+    ) { payments, promises, debtors ->
+        val reminders = mutableListOf<String>()
+        val todayStart = getStartOfToday()
+        val todayEnd = getEndOfToday()
+
+        // Find cheques to cash today
+        payments.filter { 
+            it.paymentType == "CHEQUE" && 
+            it.chequeCashingDate != null && 
+            it.chequeCashingDate in todayStart..todayEnd 
+        }.forEach { cheque ->
+            val debtorName = debtors.find { it.id == cheque.debtorId }?.name ?: "Student #${cheque.debtorId}"
+            val dateStr = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date(cheque.chequeCashingDate!!))
+            reminders.add("Cheque Reminder: Cheque #${cheque.chequeNumber} for $debtorName (₹${cheque.amount}) is scheduled for cashing today ($dateStr)!")
+        }
+
+        // Find promises due today
+        promises.filter { 
+            it.ptpStatus == "ACTIVE" && 
+            it.promisedPaymentDate in todayStart..todayEnd 
+        }.forEach { ptp ->
+            val debtorName = debtors.find { it.id == ptp.debtorId }?.name ?: "Student #${ptp.debtorId}"
+            val dateStr = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date(ptp.promisedPaymentDate))
+            reminders.add("Commitment Due Today: $debtorName promised to pay ₹${ptp.promisedAmount} on call today ($dateStr)!")
+        }
+
+        reminders
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
+
+    fun recordPayment(
+        debtorId: String,
+        paymentType: String,
+        amount: Double,
+        utrNumber: String? = null,
+        chequeNumber: String? = null,
+        chequeCashingDate: Long? = null,
+        remarks: String = ""
+    ) {
+        viewModelScope.launch {
+            val payment = PaymentHistoryEntity(
+                debtorId = debtorId,
+                paymentType = paymentType,
+                amount = amount,
+                paymentDate = System.currentTimeMillis(),
+                utrNumber = utrNumber,
+                chequeNumber = chequeNumber,
+                chequeCashingDate = chequeCashingDate,
+                remarks = remarks
+            )
+            collectionDao.insertPayment(payment)
+        }
+    }
+
+    fun getPaymentsForDebtor(debtorId: String): Flow<List<PaymentHistoryEntity>> {
+        return collectionDao.getPaymentsForDebtor(debtorId)
     }
 }

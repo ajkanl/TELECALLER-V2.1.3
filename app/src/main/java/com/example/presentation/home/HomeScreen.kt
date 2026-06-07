@@ -113,6 +113,7 @@ fun HomeScreen(
     val activeCallDebtor by viewModel.activeCallDebtor.collectAsState()
     val isDialing by viewModel.isDialing.collectAsState()
     val isNumberMaskingEnabled by viewModel.isNumberMaskingEnabled.collectAsState()
+    val todayReminders by viewModel.todayReminders.collectAsState()
 
     var activeTab by remember { mutableStateOf("Home") }
     var isEditingProfile by remember { mutableStateOf(false) }
@@ -240,6 +241,61 @@ fun HomeScreen(
                         .padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
+                    // --- TODAY'S ACTION ALERTS & REMINDERS ---
+                    if (todayReminders.isNotEmpty()) {
+                        item {
+                            Card(
+                                shape = RoundedCornerShape(20.dp),
+                                colors = CardDefaults.cardColors(containerColor = Color(0xFF7F1D1D)), // Crimson alert background
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .border(1.dp, Color(0xFFEF4444), RoundedCornerShape(20.dp))
+                            ) {
+                                Column(modifier = Modifier.padding(16.dp)) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Info,
+                                            contentDescription = "Alerts Icon",
+                                            tint = Color(0xFFFCA5A5),
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                        Text(
+                                            text = "TODAY'S ACTION REMINDERS",
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color(0xFFFCA5A5),
+                                            letterSpacing = 1.sp
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.height(10.dp))
+                                    todayReminders.forEach { notificationText ->
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                                            verticalAlignment = Alignment.Top,
+                                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                        ) {
+                                            Text(
+                                                text = "•",
+                                                color = Color(0xFFFCA5A5),
+                                                fontSize = 14.sp,
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                            Text(
+                                                text = notificationText,
+                                                fontSize = 12.sp,
+                                                fontWeight = FontWeight.Medium,
+                                                color = Color(0xFFFECACA)
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
                     // --- 2. PRIORITY FOLLOW-UP BENTO BOX ---
                     item {
                         PriorityBentoBox(

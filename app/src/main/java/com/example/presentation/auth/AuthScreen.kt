@@ -36,6 +36,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.ui.theme.rsp
 
 @Composable
 fun SunsetMountainBackdrop(modifier: Modifier = Modifier) {
@@ -203,6 +204,8 @@ fun AuthScreen(viewModel: AuthViewModel, onAuthSuccess: (String) -> Unit) {
         if (uiState is AuthUiState.Error) {
             Toast.makeText(context, (uiState as AuthUiState.Error).message, Toast.LENGTH_LONG).show()
             viewModel.clearError()
+        } else if (uiState is AuthUiState.Success && !isLoginMode) {
+            Toast.makeText(context, "New user created successfully!", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -230,7 +233,7 @@ fun AuthScreen(viewModel: AuthViewModel, onAuthSuccess: (String) -> Unit) {
             // Thin Display Heading #10
             Text(
                 text = if (isLoginMode) "Login #10" else "Register #10",
-                fontSize = 17.sp,
+                fontSize = 17.rsp,
                 fontWeight = FontWeight.Light,
                 color = Color.White.copy(alpha = 0.7f),
                 textAlign = TextAlign.Center,
@@ -242,7 +245,7 @@ fun AuthScreen(viewModel: AuthViewModel, onAuthSuccess: (String) -> Unit) {
             // Bold Have an Account? Subheading
             Text(
                 text = if (isLoginMode) "Have an account?" else "Create account!",
-                fontSize = 24.sp,
+                fontSize = 24.rsp,
                 fontWeight = FontWeight.Light,
                 color = Color.White,
                 textAlign = TextAlign.Center,
@@ -280,7 +283,7 @@ fun AuthScreen(viewModel: AuthViewModel, onAuthSuccess: (String) -> Unit) {
                     ) {
                         Text(
                             text = label,
-                            fontSize = 11.sp,
+                            fontSize = 11.rsp,
                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                             color = if (isSelected) Color.White else Color.White.copy(alpha = 0.6f)
                         )
@@ -598,62 +601,7 @@ fun AuthScreen(viewModel: AuthViewModel, onAuthSuccess: (String) -> Unit) {
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // -- Separator Text: "— Or Sign In With —" --
-            Text(
-                text = "— Or Sign In With —",
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Normal,
-                color = Color.White.copy(alpha = 0.55f),
-                textAlign = TextAlign.Center
-            )
-
-            Spacer(modifier = Modifier.height(18.dp))
-
-            // -- Social Facebook & Twitter side-by-side Flat buttons (White matching image) --
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                // Facebook Button
-                Button(
-                    onClick = {
-                        Toast.makeText(context, "Facebook Sign-In Demo Mode Activated", Toast.LENGTH_SHORT).show()
-                    },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.White,
-                        contentColor = textCharcoalDark
-                    ),
-                    shape = RoundedCornerShape(4.dp),  // Slightly squared-flat corners matching mockup
-                    contentPadding = PaddingValues(0.dp),
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(44.dp)
-                ) {
-                    Text("Facebook", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF0E121E))
-                }
-
-                // Twitter Button
-                Button(
-                    onClick = {
-                        Toast.makeText(context, "Twitter Sign-In Demo Mode Activated", Toast.LENGTH_SHORT).show()
-                    },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.White,
-                        contentColor = textCharcoalDark
-                    ),
-                    shape = RoundedCornerShape(4.dp),
-                    contentPadding = PaddingValues(0.dp),
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(44.dp)
-                ) {
-                    Text("Twitter", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF0E121E))
-                }
-            }
-
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
             // Alternate Auth Mode Switcher (Sign Up / Log In switch)
             Row(

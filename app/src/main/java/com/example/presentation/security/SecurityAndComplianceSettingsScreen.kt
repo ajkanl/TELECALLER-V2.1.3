@@ -35,6 +35,7 @@ fun SecurityAndComplianceSettingsScreen(
     viewModel: SecurityViewModel,
     onBack: () -> Unit
 ) {
+    val context = androidx.compose.ui.platform.LocalContext.current
     val isNumberMaskingEnabled by viewModel.isNumberMaskingEnabled.collectAsState()
     val isHardwareBindingEnabled by viewModel.isHardwareBindingEnabled.collectAsState()
     val isScreenshotBlockEnabled by viewModel.isScreenshotBlockEnabled.collectAsState()
@@ -773,6 +774,7 @@ fun SecurityAndComplianceSettingsScreen(
                                 isAdmin = newAgentIsAdmin
                             ) { result ->
                                 if (result.isSuccess) {
+                                    android.widget.Toast.makeText(context, "New user created successfully!", android.widget.Toast.LENGTH_SHORT).show()
                                     newAgentName = ""
                                     newAgentPassword = ""
                                     newAgentPhone = ""
