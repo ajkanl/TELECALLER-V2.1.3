@@ -20,7 +20,7 @@ import com.example.data.local.entity.PromiseToPayEntity
         CallLogEntity::class,
         PromiseToPayEntity::class
     ],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 @TypeConverters(RoomTypeConverters::class)

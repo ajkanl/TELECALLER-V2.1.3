@@ -26,12 +26,20 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import android.net.Uri
+import android.content.Intent
+import androidx.compose.material.icons.filled.Send
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Call
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.IconButton
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
@@ -107,6 +115,7 @@ fun HomeScreen(
     val isNumberMaskingEnabled by viewModel.isNumberMaskingEnabled.collectAsState()
 
     var activeTab by remember { mutableStateOf("Home") }
+    var isEditingProfile by remember { mutableStateOf(false) }
     var queueSearchQuery by remember { mutableStateOf("") }
 
     // Dashboard dynamic tabs & date filters states (Leaderboard & Outgoing Logs)
@@ -1103,6 +1112,31 @@ fun HomeScreen(
 
                                             IconButton(
                                                 onClick = {
+                                                    try {
+                                                        val cleanNumber = debtor.phoneNumber.replace(Regex("[^0-9]"), "")
+                                                        val formattedNumber = if (cleanNumber.length == 10) "91$cleanNumber" else cleanNumber
+                                                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://api.whatsapp.com/send?phone=$formattedNumber"))
+                                                        context.startActivity(intent)
+                                                    } catch (e: Exception) {
+                                                        Toast.makeText(context, "WhatsApp is not installed or error opening link", Toast.LENGTH_SHORT).show()
+                                                    }
+                                                },
+                                                modifier = Modifier
+                                                    .size(28.dp)
+                                                    .clip(CircleShape)
+                                                    .background(Color(0xFF25D366))
+                                                    .testTag("whatsapp_button_student_${debtor.id}")
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.Send,
+                                                    contentDescription = "Message via WhatsApp",
+                                                    tint = Color.White,
+                                                    modifier = Modifier.size(12.dp)
+                                                )
+                                            }
+
+                                            IconButton(
+                                                onClick = {
                                                     viewModel.initiateCall(debtor)
                                                     viewModel.selectDebtor(debtor)
                                                 },
@@ -1690,179 +1724,269 @@ fun HomeScreen(
                     }
                 }
             } else if (activeTab == "Account") {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(72.dp)
-                            .background(Color(0xFFEFF6FF), CircleShape),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "RK",
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = primaryBlue
-                        )
-                    }
+                val activeAgent by viewModel.activeImpersonatedAgent.collectAsState()
+                val telecallers by viewModel.telecallersList.collectAsState()
+                val currentAgent = activeAgent ?: telecallers.firstOrNull { it.id == "T01" } ?: com.example.domain.security.TelecallerAgent("T01", "Rajesh Kumar", true, 142, 272, 28)
 
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Text(
-                        text = "Recovery Agent Portal",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = textSlateColor
+                if (isEditingProfile) {
+                    EditProfileSheet(
+                        agent = currentAgent,
+                        onDismiss = { isEditingProfile = false },
+                        onSave = { newName, newPicture ->
+                            viewModel.updateAgentProfile(currentAgent.id, newName, newPicture)
+                            isEditingProfile = false
+                            Toast.makeText(context, "Agent Profile Updated Successfully!", Toast.LENGTH_SHORT).show()
+                        }
                     )
-
-                    Text(
-                        text = "Authorized SIM Line Carrier",
-                        fontSize = 12.sp,
-                        color = textSlateMuted,
-                        modifier = Modifier.padding(top = 4.dp, bottom = 32.dp)
-                    )
-
-                    Button(
-                        onClick = onOpenSecuritySettings,
-                        colors = ButtonDefaults.buttonColors(containerColor = primaryBlue),
-                        shape = RoundedCornerShape(16.dp),
+                } else {
+                    Column(
                         modifier = Modifier
-                            .fillMaxWidth(0.8f)
-                            .height(50.dp)
-                            .testTag("open_security_settings_button")
+                            .fillMaxSize()
+                            .padding(24.dp)
+                            .verticalScroll(rememberScrollState()),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
                     ) {
-                        Text("Security & Compliance", color = Color.White, fontWeight = FontWeight.Bold)
-                    }
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 24.dp)
+                                .testTag("agent_profile_summary_card"),
+                            shape = RoundedCornerShape(24.dp),
+                            colors = CardDefaults.cardColors(containerColor = cardBackgroundColor),
+                            border = BorderStroke(1.dp, cardBorderColor)
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(20.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Box(
+                                    modifier = Modifier.padding(top = 10.dp)
+                                ) {
+                                    AgentAvatar(agent = currentAgent, size = 88.dp, onClick = { isEditingProfile = true })
+                                    
+                                    Box(
+                                        modifier = Modifier
+                                            .size(28.dp)
+                                            .clip(CircleShape)
+                                            .background(primaryBlue)
+                                            .align(Alignment.BottomEnd)
+                                            .border(2.dp, backgroundColor, CircleShape)
+                                            .clickable { isEditingProfile = true },
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = androidx.compose.material.icons.Icons.Default.Edit,
+                                            contentDescription = "Edit Picture Button",
+                                            tint = Color.White,
+                                            modifier = Modifier.size(14.dp)
+                                        )
+                                    }
+                                }
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                                Spacer(modifier = Modifier.height(16.dp))
 
-                    Button(
-                        onClick = onOpenCampaignControl,
-                        colors = ButtonDefaults.buttonColors(containerColor = primaryBlue),
-                        shape = RoundedCornerShape(16.dp),
-                        modifier = Modifier
-                            .fillMaxWidth(0.8f)
-                            .height(50.dp)
-                            .testTag("open_campaign_control_button")
-                    ) {
-                        Text("Campaign & Routing", color = Color.White, fontWeight = FontWeight.Bold)
-                    }
+                                Text(
+                                    text = currentAgent.name,
+                                    fontSize = 20.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = textSlateColor,
+                                    textAlign = TextAlign.Center
+                                )
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                                Text(
+                                    text = "Recovery Agent Code: ${currentAgent.id}",
+                                    fontSize = 12.sp,
+                                    color = textSlateMuted,
+                                    fontFamily = FontFamily.Monospace,
+                                    modifier = Modifier.padding(top = 4.dp, bottom = 8.dp)
+                                )
 
-                    Button(
-                        onClick = onOpenTelephonySettings,
-                        colors = ButtonDefaults.buttonColors(containerColor = primaryBlue),
-                        shape = RoundedCornerShape(16.dp),
-                        modifier = Modifier
-                            .fillMaxWidth(0.8f)
-                            .height(50.dp)
-                            .testTag("open_telephony_settings_button")
-                    ) {
-                        Text("Telephony Settings", color = Color.White, fontWeight = FontWeight.Bold)
-                    }
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(top = 12.dp)
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .background(backgroundColor)
+                                        .padding(12.dp),
+                                    horizontalArrangement = Arrangement.SpaceEvenly
+                                ) {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Text(text = "Calls", color = textSlateMuted, fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
+                                        Text(text = "${currentAgent.callsDialed}", color = textSlateColor, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                                    }
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Text(text = "Talktime (m)", color = textSlateMuted, fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
+                                        Text(text = "${currentAgent.talkTimeMinutes}", color = textSlateColor, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                                    }
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Text(text = "PTPs Secured", color = textSlateMuted, fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
+                                        Text(text = "${currentAgent.ptpsSecured}", color = textSlateColor, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                                    }
+                                }
+                            }
+                        }
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                        Button(
+                            onClick = { isEditingProfile = true },
+                            colors = ButtonDefaults.buttonColors(containerColor = primaryBlue),
+                            shape = RoundedCornerShape(16.dp),
+                            modifier = Modifier
+                                .fillMaxWidth(0.8f)
+                                .height(50.dp)
+                                .testTag("btn_edit_profile")
+                        ) {
+                            Text("Edit Contact Profile", color = Color.White, fontWeight = FontWeight.Bold)
+                        }
 
-                    Button(
-                        onClick = onOpenSyncSettings,
-                        colors = ButtonDefaults.buttonColors(containerColor = primaryBlue),
-                        shape = RoundedCornerShape(16.dp),
-                        modifier = Modifier
-                            .fillMaxWidth(0.8f)
-                            .height(50.dp)
-                            .testTag("open_sync_settings_button")
-                    ) {
-                        Text("Data & Sync Settings", color = Color.White, fontWeight = FontWeight.Bold)
-                    }
+                        Spacer(modifier = Modifier.height(12.dp))
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                        Button(
+                            onClick = onOpenSecuritySettings,
+                            colors = ButtonDefaults.buttonColors(containerColor = cardBackgroundColor),
+                            shape = RoundedCornerShape(16.dp),
+                            border = BorderStroke(1.dp, cardBorderColor),
+                            modifier = Modifier
+                                .fillMaxWidth(0.8f)
+                                .height(50.dp)
+                                .testTag("open_security_settings_button")
+                        ) {
+                            Text("Security & Compliance", color = textSlateColor, fontWeight = FontWeight.Bold)
+                        }
 
-                    Button(
-                        onClick = onOpenAgentDashboard,
-                        colors = ButtonDefaults.buttonColors(containerColor = primaryBlue),
-                        shape = RoundedCornerShape(16.dp),
-                        modifier = Modifier
-                            .fillMaxWidth(0.8f)
-                            .height(50.dp)
-                            .testTag("open_agent_dashboard_button")
-                    ) {
-                        Text("Agent Dashboard", color = Color.White, fontWeight = FontWeight.Bold)
-                    }
+                        Spacer(modifier = Modifier.height(12.dp))
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                        Button(
+                            onClick = onOpenCampaignControl,
+                            colors = ButtonDefaults.buttonColors(containerColor = cardBackgroundColor),
+                            shape = RoundedCornerShape(16.dp),
+                            border = BorderStroke(1.dp, cardBorderColor),
+                            modifier = Modifier
+                                .fillMaxWidth(0.8f)
+                                .height(50.dp)
+                                .testTag("open_campaign_control_button")
+                        ) {
+                            Text("Campaign & Routing", color = textSlateColor, fontWeight = FontWeight.Bold)
+                        }
 
-                    Button(
-                        onClick = onOpenSmartQueue,
-                        colors = ButtonDefaults.buttonColors(containerColor = primaryBlue),
-                        shape = RoundedCornerShape(16.dp),
-                        modifier = Modifier
-                            .fillMaxWidth(0.8f)
-                            .height(50.dp)
-                            .testTag("open_smart_queue_button")
-                    ) {
-                        Text("Smart Calling Queue", color = Color.White, fontWeight = FontWeight.Bold)
-                    }
+                        Spacer(modifier = Modifier.height(12.dp))
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                        Button(
+                            onClick = onOpenTelephonySettings,
+                            colors = ButtonDefaults.buttonColors(containerColor = cardBackgroundColor),
+                            shape = RoundedCornerShape(16.dp),
+                            border = BorderStroke(1.dp, cardBorderColor),
+                            modifier = Modifier
+                                .fillMaxWidth(0.8f)
+                                .height(50.dp)
+                                .testTag("open_telephony_settings_button")
+                        ) {
+                            Text("Telephony Settings", color = textSlateColor, fontWeight = FontWeight.Bold)
+                        }
 
-                    Button(
-                        onClick = onOpenAdminAnalytics,
-                        colors = ButtonDefaults.buttonColors(containerColor = primaryBlue),
-                        shape = RoundedCornerShape(16.dp),
-                        modifier = Modifier
-                            .fillMaxWidth(0.8f)
-                            .height(50.dp)
-                            .testTag("open_admin_analytics_button")
-                    ) {
-                        Text("Admin Analytics Dashboard", color = Color.White, fontWeight = FontWeight.Bold)
-                    }
+                        Spacer(modifier = Modifier.height(12.dp))
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                        Button(
+                            onClick = onOpenSyncSettings,
+                            colors = ButtonDefaults.buttonColors(containerColor = cardBackgroundColor),
+                            shape = RoundedCornerShape(16.dp),
+                            border = BorderStroke(1.dp, cardBorderColor),
+                            modifier = Modifier
+                                .fillMaxWidth(0.8f)
+                                .height(50.dp)
+                                .testTag("open_sync_settings_button")
+                        ) {
+                            Text("Data & Sync Settings", color = textSlateColor, fontWeight = FontWeight.Bold)
+                        }
 
-                    Button(
-                        onClick = onOpenTelecallerTargetScreen,
-                        colors = ButtonDefaults.buttonColors(containerColor = primaryBlue),
-                        shape = RoundedCornerShape(16.dp),
-                        modifier = Modifier
-                            .fillMaxWidth(0.8f)
-                            .height(50.dp)
-                            .testTag("open_telecaller_target_button")
-                    ) {
-                        Text("Set Telecaller Target", color = Color.White, fontWeight = FontWeight.Bold)
-                    }
+                        Spacer(modifier = Modifier.height(12.dp))
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                        Button(
+                            onClick = onOpenAgentDashboard,
+                            colors = ButtonDefaults.buttonColors(containerColor = cardBackgroundColor),
+                            shape = RoundedCornerShape(16.dp),
+                            border = BorderStroke(1.dp, cardBorderColor),
+                            modifier = Modifier
+                                .fillMaxWidth(0.8f)
+                                .height(50.dp)
+                                .testTag("open_agent_dashboard_button")
+                        ) {
+                            Text("Agent Dashboard", color = textSlateColor, fontWeight = FontWeight.Bold)
+                        }
 
-                    Button(
-                        onClick = onOpenUploadDatabaseScreen,
-                        colors = ButtonDefaults.buttonColors(containerColor = primaryBlue),
-                        shape = RoundedCornerShape(16.dp),
-                        modifier = Modifier
-                            .fillMaxWidth(0.8f)
-                            .height(50.dp)
-                            .testTag("open_upload_data_button")
-                    ) {
-                        Text("Upload Data into Database", color = Color.White, fontWeight = FontWeight.Bold)
-                    }
+                        Spacer(modifier = Modifier.height(12.dp))
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                        Button(
+                            onClick = onOpenSmartQueue,
+                            colors = ButtonDefaults.buttonColors(containerColor = cardBackgroundColor),
+                            shape = RoundedCornerShape(16.dp),
+                            border = BorderStroke(1.dp, cardBorderColor),
+                            modifier = Modifier
+                                .fillMaxWidth(0.8f)
+                                .height(50.dp)
+                                .testTag("open_smart_queue_button")
+                        ) {
+                            Text("Smart Calling Queue", color = textSlateColor, fontWeight = FontWeight.Bold)
+                        }
 
-                    Button(
-                        onClick = onLogout,
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF4444)),
-                        shape = RoundedCornerShape(16.dp),
-                        modifier = Modifier
-                            .fillMaxWidth(0.8f)
-                            .height(50.dp)
-                            .testTag("logout_button")
-                    ) {
-                        Text("Sign Out Master Key", color = Color.White, fontWeight = FontWeight.Bold)
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Button(
+                            onClick = onOpenAdminAnalytics,
+                            colors = ButtonDefaults.buttonColors(containerColor = cardBackgroundColor),
+                            shape = RoundedCornerShape(16.dp),
+                            border = BorderStroke(1.dp, cardBorderColor),
+                            modifier = Modifier
+                                .fillMaxWidth(0.8f)
+                                .height(50.dp)
+                                .testTag("open_admin_analytics_button")
+                        ) {
+                            Text("Admin Analytics Dashboard", color = textSlateColor, fontWeight = FontWeight.Bold)
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Button(
+                            onClick = onOpenTelecallerTargetScreen,
+                            colors = ButtonDefaults.buttonColors(containerColor = cardBackgroundColor),
+                            shape = RoundedCornerShape(16.dp),
+                            border = BorderStroke(1.dp, cardBorderColor),
+                            modifier = Modifier
+                                .fillMaxWidth(0.8f)
+                                .height(50.dp)
+                                .testTag("open_telecaller_target_button")
+                        ) {
+                            Text("Set Telecaller Target", color = textSlateColor, fontWeight = FontWeight.Bold)
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Button(
+                            onClick = onOpenUploadDatabaseScreen,
+                            colors = ButtonDefaults.buttonColors(containerColor = cardBackgroundColor),
+                            shape = RoundedCornerShape(16.dp),
+                            border = BorderStroke(1.dp, cardBorderColor),
+                            modifier = Modifier
+                                .fillMaxWidth(0.8f)
+                                .height(50.dp)
+                                .testTag("open_upload_data_button")
+                        ) {
+                            Text("Upload Data into Database", color = textSlateColor, fontWeight = FontWeight.Bold)
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Button(
+                            onClick = onLogout,
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF4444)),
+                            shape = RoundedCornerShape(16.dp),
+                            modifier = Modifier
+                                .fillMaxWidth(0.8f)
+                                .height(50.dp)
+                                .testTag("logout_button")
+                        ) {
+                            Text("Sign Out Master Key", color = Color.White, fontWeight = FontWeight.Bold)
+                        }
                     }
                 }
             }
@@ -1891,6 +2015,14 @@ fun HomeScreen(
                 label = "Queue",
                 isActive = activeTab == "Queue",
                 onClick = { activeTab = "Queue" },
+                primaryColor = primaryBlue,
+                mutedColor = textSlateMuted
+            )
+            NavItem(
+                icon = Icons.Default.Call,
+                label = "Call",
+                isActive = false,
+                onClick = { onOpenSmartQueue() },
                 primaryColor = primaryBlue,
                 mutedColor = textSlateMuted
             )
@@ -2426,4 +2558,293 @@ data class LeaderboardStats(
     val recoveredAmount: Double,
     val runRate: Float
 )
+
+@Composable
+fun AgentAvatar(
+    agent: com.example.domain.security.TelecallerAgent,
+    size: androidx.compose.ui.unit.Dp = 80.dp,
+    onClick: (() -> Unit)? = null
+) {
+    val modifier = Modifier
+        .size(size)
+        .clip(CircleShape)
+        .border(2.dp, Color(0xFF1E293D), CircleShape)
+        .let { if (onClick != null) it.clickable(onClick = onClick) else it }
+
+    val presetBrush = when (agent.profilePicture) {
+        "preset:cyber_blue" -> androidx.compose.ui.graphics.Brush.linearGradient(listOf(Color(0xFF3B82F6), Color(0xFF1D4ED8)))
+        "preset:gold_shield" -> androidx.compose.ui.graphics.Brush.linearGradient(listOf(Color(0xFFFBBF24), Color(0xFFD97706)))
+        "preset:emerald_guardian" -> androidx.compose.ui.graphics.Brush.linearGradient(listOf(Color(0xFF10B981), Color(0xFF047857)))
+        "preset:sunset_crimson" -> androidx.compose.ui.graphics.Brush.linearGradient(listOf(Color(0xFFF43F5E), Color(0xFFBE123C)))
+        "preset:cosmic_purple" -> androidx.compose.ui.graphics.Brush.linearGradient(listOf(Color(0xFF8B5CF6), Color(0xFF5B21B6)))
+        else -> null
+    }
+
+    if (presetBrush != null) {
+        Box(
+            modifier = modifier.background(presetBrush),
+            contentAlignment = Alignment.Center
+        ) {
+            val icon = when (agent.profilePicture) {
+                "preset:cyber_blue" -> Icons.Default.AccountCircle
+                "preset:gold_shield" -> Icons.Default.Settings
+                "preset:emerald_guardian" -> Icons.Default.List
+                "preset:sunset_crimson" -> Icons.Default.Call
+                else -> Icons.Default.Home
+            }
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = Color.White,
+                modifier = Modifier.size(size * 0.5f)
+            )
+        }
+    } else if (agent.profilePicture != null && agent.profilePicture.isNotEmpty()) {
+        Box(
+            modifier = modifier.background(Color.White),
+            contentAlignment = Alignment.Center
+        ) {
+            val painter = coil.compose.rememberAsyncImagePainter(model = Uri.parse(agent.profilePicture))
+            androidx.compose.foundation.Image(
+                painter = painter,
+                contentDescription = "Agent profile picture",
+                modifier = Modifier.fillMaxSize(),
+                contentScale = androidx.compose.ui.layout.ContentScale.Crop
+            )
+        }
+    } else {
+        val initials = if (agent.name.length >= 2) {
+            agent.name.split(" ").mapNotNull { it.firstOrNull() }.take(2).joinToString("").uppercase()
+        } else if (agent.name.isNotEmpty()) {
+            agent.name.take(1).uppercase()
+        } else {
+            "A"
+        }
+        val defaultBrush = androidx.compose.ui.graphics.Brush.linearGradient(listOf(Color(0xFF3B82F6), Color(0xFF1D4ED8)))
+        Box(
+            modifier = modifier.background(defaultBrush),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = initials,
+                fontSize = (size.value * 0.32f).sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.White
+            )
+        }
+    }
+}
+
+@Composable
+fun EditProfileSheet(
+    agent: com.example.domain.security.TelecallerAgent,
+    onDismiss: () -> Unit,
+    onSave: (newName: String, newPicture: String?) -> Unit
+) {
+    var nameInput by remember { mutableStateOf(agent.name) }
+    var selectedPicture by remember { mutableStateOf(agent.profilePicture) }
+    val context = LocalContext.current
+
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            selectedPicture = uri.toString()
+            Toast.makeText(context, "Verification Photo Linked", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    val previewAgent = remember(nameInput, selectedPicture) {
+        agent.copy(name = nameInput, profilePicture = selectedPicture)
+    }
+
+    val backOverlay = Color(0xFF090F1C)
+    val cardBg = Color(0xFF172033)
+    val cardBorder = Color(0xFF1E293D)
+    val primaryBlue = Color(0xFF3B82F6)
+    val textSlate = Color(0xFFF8FAFC)
+    val textMuted = Color(0xFF94A3B8)
+
+    Card(
+        modifier = Modifier
+            .fillMaxSize()
+            .testTag("edit_profile_sheet"),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = cardBg),
+        border = BorderStroke(1.dp, cardBorder)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(20.dp)
+                .verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Edit Carrier Profile",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = textSlate
+                )
+                IconButton(onClick = onDismiss, modifier = Modifier.testTag("close_profile_edit")) {
+                    Icon(imageVector = Icons.Default.Close, contentDescription = "Close", tint = textSlate)
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Box(contentAlignment = Alignment.Center) {
+                AgentAvatar(agent = previewAgent, size = 110.dp)
+                
+                Box(
+                    modifier = Modifier
+                        .size(110.dp)
+                        .clip(CircleShape)
+                        .background(Color.Black.copy(alpha = 0.35f))
+                        .clickable { imagePickerLauncher.launch("image/*") },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = "Pick Photo",
+                        tint = Color.White,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "Tap photo circle to upload custom avatar image",
+                fontSize = 11.sp,
+                color = textMuted
+            )
+
+            Spacer(modifier = Modifier.height(28.dp))
+
+            OutlinedTextField(
+                value = nameInput,
+                onValueChange = { nameInput = it },
+                label = { Text("Display Name/Alias") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("edit_name_input"),
+                singleLine = true,
+                textStyle = androidx.compose.ui.text.TextStyle(color = textSlate, fontSize = 16.sp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = primaryBlue,
+                    unfocusedBorderColor = cardBorder,
+                    focusedLabelColor = primaryBlue,
+                    unfocusedLabelColor = textMuted,
+                    cursorColor = primaryBlue
+                )
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Text(
+                text = "CHOOSE SECURE SYSTEM THEME BADGE",
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold,
+                color = textMuted,
+                modifier = Modifier.align(Alignment.Start)
+            )
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            val presets = listOf(
+                "preset:cyber_blue" to "Cyber",
+                "preset:gold_shield" to "Shield",
+                "preset:emerald_guardian" to "Emerald",
+                "preset:sunset_crimson" to "Sunset",
+                "preset:cosmic_purple" to "Purple"
+            )
+
+            LazyRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                items(presets) { (presetId, label) ->
+                    val isSelected = selectedPicture == presetId
+                    val mockPreset = agent.copy(profilePicture = presetId)
+                    Card(
+                        modifier = Modifier
+                            .width(85.dp)
+                            .clickable { selectedPicture = presetId }
+                            .border(
+                                width = if (isSelected) 3.dp else 1.dp,
+                                color = if (isSelected) primaryBlue else Color.Transparent,
+                                shape = RoundedCornerShape(12.dp)
+                            ),
+                        colors = CardDefaults.cardColors(containerColor = backOverlay),
+                        border = BorderStroke(1.dp, cardBorder)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(10.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            AgentAvatar(agent = mockPreset, size = 40.dp)
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Text(
+                                text = label,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (isSelected) primaryBlue else textSlate,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            Button(
+                onClick = { selectedPicture = null },
+                colors = ButtonDefaults.buttonColors(containerColor = cardBorder, contentColor = textSlate),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text("Reset to Name Initials", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+            }
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Button(
+                    onClick = onDismiss,
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.buttonColors(containerColor = cardBorder, contentColor = textMuted),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Text("Cancel", fontWeight = FontWeight.Bold)
+                }
+
+                Button(
+                    onClick = {
+                        if (nameInput.trim().isEmpty()) {
+                            Toast.makeText(context, "Name cannot be empty!", Toast.LENGTH_SHORT).show()
+                        } else {
+                            onSave(nameInput.trim(), selectedPicture)
+                        }
+                    },
+                    modifier = Modifier
+                        .weight(1f)
+                        .testTag("save_profile_button"),
+                    colors = ButtonDefaults.buttonColors(containerColor = primaryBlue),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Text("Save Changes", fontWeight = FontWeight.Bold, color = Color.White)
+                }
+            }
+        }
+    }
+}
 

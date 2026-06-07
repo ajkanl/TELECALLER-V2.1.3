@@ -1,6 +1,9 @@
 package com.example.presentation.queue
 
 import android.widget.Toast
+import android.content.Intent
+import android.net.Uri
+import androidx.compose.material.icons.filled.Send
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -416,6 +419,7 @@ fun DebtorQueueCard(
     onCallClick: () -> Unit,
     onLockedClick: () -> Unit
 ) {
+    val context = LocalContext.current
     val progressBorderColor = if (isLocked) Color(0xFF1E293D) else Color(0xFF1E293D)
     
     Card(
@@ -563,23 +567,59 @@ fun DebtorQueueCard(
                 }
             }
 
-            // Dial Trigger (Phone Button)
-            val buttonColor = if (isLocked) Color(0xFFCBD5E1) else if (tabIndex == 1) Color(0xFFEA580C) else Color(0xFF10B981)
-            IconButton(
-                onClick = { if (isLocked) onLockedClick() else onCallClick() },
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(CircleShape)
-                    .background(buttonColor)
-                    .testTag("dial_button_${debtor.id}"),
-                colors = IconButtonDefaults.iconButtonColors(contentColor = Color.White)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Icon(
-                    imageVector = if (isLocked) Icons.Default.Lock else Icons.Default.Call,
-                    contentDescription = if (isLocked) "Call Locked" else "Call Customer",
-                    tint = Color.White,
-                    modifier = Modifier.size(20.dp)
-                )
+                // WhatsApp Trigger
+                IconButton(
+                    onClick = {
+                        if (isLocked) {
+                            onLockedClick()
+                        } else {
+                            try {
+                                val cleanNumber = debtor.phoneNumber.replace(Regex("[^0-9]"), "")
+                                val formattedNumber = if (cleanNumber.length == 10) "91$cleanNumber" else cleanNumber
+                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://api.whatsapp.com/send?phone=$formattedNumber"))
+                                context.startActivity(intent)
+                            } catch (e: Exception) {
+                                Toast.makeText(context, "WhatsApp is not installed or error opening link", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    },
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(CircleShape)
+                        .background(if (isLocked) Color(0xFF1F2937) else Color(0xFF25D366))
+                        .testTag("whatsapp_button_${debtor.id}"),
+                    colors = IconButtonDefaults.iconButtonColors(contentColor = Color.White)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Send,
+                        contentDescription = if (isLocked) "Message Locked" else "Message via WhatsApp",
+                        tint = if (isLocked) Color(0xFF6B7280) else Color.White,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+
+                // Dial Trigger (Phone Button)
+                val buttonColor = if (isLocked) Color(0xFFCBD5E1) else if (tabIndex == 1) Color(0xFFEA580C) else Color(0xFF10B981)
+                IconButton(
+                    onClick = { if (isLocked) onLockedClick() else onCallClick() },
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(CircleShape)
+                        .background(buttonColor)
+                        .testTag("dial_button_${debtor.id}"),
+                    colors = IconButtonDefaults.iconButtonColors(contentColor = Color.White)
+                ) {
+                    Icon(
+                        imageVector = if (isLocked) Icons.Default.Lock else Icons.Default.Call,
+                        contentDescription = if (isLocked) "Call Locked" else "Call Customer",
+                        tint = Color.White,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
             }
         }
     }

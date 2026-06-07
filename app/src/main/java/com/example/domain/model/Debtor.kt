@@ -26,5 +26,7 @@ data class CallRecord(
     val time: String,
     val simCard: String, // "SIM 1", "SIM 2"
     val date: String = "",
-    val notes: String = ""
+    val notes: String = "",
+    val callType: String = "OUTBOUND", // "OUTBOUND" or "INBOUND"
+    val category: String = "Business"  // "Business" or "Personal"
 )

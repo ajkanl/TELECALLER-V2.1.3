@@ -1,6 +1,9 @@
 package com.example.presentation.dashboard
 
 import android.widget.Toast
+import android.content.Intent
+import android.net.Uri
+import androidx.compose.material.icons.filled.Send
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -73,6 +76,7 @@ fun AgentDashboardScreen(
 
     var selectedDashboardSection by remember { mutableStateOf("Leaderboard") } // "Leaderboard" or "Outgoing Logs"
     var selectedDatePeriod by remember { mutableStateOf("TODAY") } // "TODAY", "YESTERDAY", "THIS WEEK", "THIS MONTH", "THIS YEAR", "DATE RANGE"
+    var activeLogFilter by remember { mutableStateOf<String?>(null) } // null, "INBOUND", "OUTBOUND", "Personal", "Business"
 
     val sdfFormat = remember { java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()) }
     val initialDateStr = remember { sdfFormat.format(java.util.Date()) }
@@ -81,7 +85,7 @@ fun AgentDashboardScreen(
 
     val recentCalls by viewModel.recentCalls.collectAsState()
     val telecallersList by viewModel.telecallersList.collectAsState()
-    val cardBorderColor = Color(0xFFE2E8F0)
+    val cardBorderColor = Color(0xFF334155)
 
     val isDateInPeriod = remember {
         { dateStr: String, period: String, fDateStr: String, tDateStr: String ->
@@ -202,10 +206,10 @@ fun AgentDashboardScreen(
         }.sortedByDescending { it.second.ptpsSecured }
     }
 
-    val primaryBlue = Color(0xFF2563EB)
-    val darkBlue = Color(0xFF1D4ED8)
-    val textSlateColor = Color(0xFF1E293B)
-    val textSlateMuted = Color(0xFF64748B)
+    val primaryBlue = Color(0xFF3B82F6)
+    val darkBlue = Color(0xFF60A5FA)
+    val textSlateColor = Color(0xFFF8FAFC)
+    val textSlateMuted = Color(0xFF94A3B8)
     val successGreen = Color(0xFF10B981)
     val errorRed = Color(0xFFEF4444)
 
@@ -276,7 +280,7 @@ fun AgentDashboardScreen(
                     containerColor = Color.Transparent,
                     titleContentColor = textSlateColor
                 ),
-                modifier = Modifier.border(1.dp, Color(0xFFF1F5F9))
+                modifier = Modifier.border(1.dp, cardBorderColor)
             )
         }
     ) { innerPadding ->
@@ -356,7 +360,7 @@ fun AgentDashboardScreen(
                     colors = CardDefaults.cardColors(containerColor = Color.Transparent),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(16.dp))
+                        .border(1.dp, cardBorderColor, RoundedCornerShape(16.dp))
                         .testTag("dashboard_progress_header_card")
                 ) {
                     Column(
@@ -452,14 +456,14 @@ fun AgentDashboardScreen(
                         LinearProgressIndicator(
                             progress = { progressValue.coerceIn(0f, 1f) },
                             color = successGreen,
-                            trackColor = Color(0xFFF1F5F9),
+                            trackColor = Color(0xFF1E293B),
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(8.dp)
                                 .clip(RoundedCornerShape(4.dp))
                         )
 
-                        HorizontalDivider(color = Color(0xFFF1F5F9))
+                        HorizontalDivider(color = cardBorderColor)
 
                         // Calls Made vs Pending Leads Subgroup
                         Row(
@@ -486,7 +490,7 @@ fun AgentDashboardScreen(
                                 modifier = Modifier
                                     .width(1.dp)
                                     .height(30.dp)
-                                    .background(Color(0xFFE2E8F0))
+                                    .background(cardBorderColor)
                             )
 
                             Column(
@@ -617,7 +621,7 @@ fun AgentDashboardScreen(
                             colors = CardDefaults.cardColors(containerColor = Color.Transparent),
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(12.dp))
+                                .border(1.dp, cardBorderColor, RoundedCornerShape(12.dp))
                         ) {
                             Box(
                                 modifier = Modifier
@@ -640,7 +644,7 @@ fun AgentDashboardScreen(
                                     colors = CardDefaults.cardColors(containerColor = Color.Transparent),
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(14.dp))
+                                        .border(1.dp, cardBorderColor, RoundedCornerShape(14.dp))
                                         .testTag("ptp_alert_card_$index")
                                 ) {
                                     Row(
@@ -691,44 +695,85 @@ fun AgentDashboardScreen(
                                             )
                                         }
 
-                                        // Call Now button
-                                        Button(
-                                            onClick = {
-                                                // Create domain Debtor model to dial
-                                                val model = Debtor(
-                                                    id = debtor.id,
-                                                    name = debtor.name,
-                                                    overdueDays = if (debtor.dpdBucket.contains("1-30")) 15 else 45,
-                                                    outstandingAmount = debtor.outstandingAmount,
-                                                    customerSegment = debtor.customerSegment,
-                                                    phoneNumber = debtor.contactNumber,
-                                                    address = debtor.address,
-                                                    lastContactDate = debtor.lastContactDate
-                                                )
-                                                onCallDebtor(model)
-                                            },
-                                            colors = ButtonDefaults.buttonColors(containerColor = successGreen),
-                                            shape = RoundedCornerShape(12.dp),
-                                            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
-                                            modifier = Modifier
-                                                .testTag("ptp_call_button_$index")
+                                        Row(
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                            verticalAlignment = Alignment.CenterVertically
                                         ) {
-                                            Row(
-                                                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                                verticalAlignment = Alignment.CenterVertically
+                                            // WhatsApp Button
+                                            Button(
+                                                onClick = {
+                                                    try {
+                                                        val cleanNumber = debtor.contactNumber.replace(Regex("[^0-9]"), "")
+                                                        val formattedNumber = if (cleanNumber.length == 10) "91$cleanNumber" else cleanNumber
+                                                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://api.whatsapp.com/send?phone=$formattedNumber"))
+                                                        context.startActivity(intent)
+                                                    } catch (e: Exception) {
+                                                        Toast.makeText(context, "WhatsApp is not installed or error opening link", Toast.LENGTH_SHORT).show()
+                                                    }
+                                                },
+                                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF25D366)),
+                                                shape = RoundedCornerShape(12.dp),
+                                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp),
+                                                modifier = Modifier.testTag("ptp_whatsapp_button_$index")
                                             ) {
-                                                Icon(
-                                                    imageVector = Icons.Default.Call,
-                                                    contentDescription = "Call",
-                                                    tint = Color.White,
-                                                    modifier = Modifier.size(14.dp)
-                                                )
-                                                Text(
-                                                    text = "Call Now",
-                                                    fontSize = 11.sp,
-                                                    fontWeight = FontWeight.Bold,
-                                                    color = Color.White
-                                                )
+                                                Row(
+                                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                                    verticalAlignment = Alignment.CenterVertically
+                                                ) {
+                                                    Icon(
+                                                        imageVector = Icons.Default.Send,
+                                                        contentDescription = "WhatsApp",
+                                                        tint = Color.White,
+                                                        modifier = Modifier.size(14.dp)
+                                                    )
+                                                    Text(
+                                                        text = "WhatsApp",
+                                                        fontSize = 11.sp,
+                                                        fontWeight = FontWeight.Bold,
+                                                        color = Color.White
+                                                    )
+                                                }
+                                            }
+
+                                            // Call Now button
+                                            Button(
+                                                onClick = {
+                                                    // Create domain Debtor model to dial
+                                                    val model = Debtor(
+                                                        id = debtor.id,
+                                                        name = debtor.name,
+                                                        overdueDays = if (debtor.dpdBucket.contains("1-30")) 15 else 45,
+                                                        outstandingAmount = debtor.outstandingAmount,
+                                                        customerSegment = debtor.customerSegment,
+                                                        phoneNumber = debtor.contactNumber,
+                                                        address = debtor.address,
+                                                        lastContactDate = debtor.lastContactDate
+                                                    )
+                                                    onCallDebtor(model)
+                                                },
+                                                colors = ButtonDefaults.buttonColors(containerColor = successGreen),
+                                                shape = RoundedCornerShape(12.dp),
+                                                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
+                                                modifier = Modifier
+                                                    .testTag("ptp_call_button_$index")
+                                            ) {
+                                                Row(
+                                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                                    verticalAlignment = Alignment.CenterVertically
+                                                ) {
+                                                    Icon(
+                                                        imageVector = Icons.Default.Call,
+                                                        contentDescription = "Call",
+                                                        tint = Color.White,
+                                                        modifier = Modifier.size(14.dp)
+                                                    )
+                                                    Text(
+                                                        text = "Call Now",
+                                                        fontSize = 11.sp,
+                                                        fontWeight = FontWeight.Bold,
+                                                        color = Color.White
+                                                    )
+                                                }
                                             }
                                         }
                                     }
@@ -753,7 +798,7 @@ fun AgentDashboardScreen(
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .background(Color.Black.copy(alpha = 0.03f), RoundedCornerShape(12.dp))
+                                    .background(Color.White.copy(alpha = 0.08f), RoundedCornerShape(12.dp))
                                     .border(1.dp, cardBorderColor.copy(alpha = 0.4f), RoundedCornerShape(12.dp))
                                     .padding(4.dp),
                                 horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -1092,7 +1137,115 @@ fun AgentDashboardScreen(
                                 }
                             } else {
                                 // Outgoing logs list matching filteredCalls
-                                if (filteredCalls.isEmpty()) {
+                                val inboundCount = filteredCalls.count { it.callType.equals("INBOUND", ignoreCase = true) }
+                                val outboundCount = filteredCalls.count { it.callType.equals("OUTBOUND", ignoreCase = true) }
+                                val personalCount = filteredCalls.count { it.category.equals("Personal", ignoreCase = true) }
+                                val businessCount = filteredCalls.count { it.category.equals("Business", ignoreCase = true) }
+
+                                val finalFilteredCalls = remember(filteredCalls, activeLogFilter) {
+                                    when (activeLogFilter) {
+                                        "INBOUND" -> filteredCalls.filter { it.callType.equals("INBOUND", ignoreCase = true) }
+                                        "OUTBOUND" -> filteredCalls.filter { it.callType.equals("OUTBOUND", ignoreCase = true) }
+                                        "Personal" -> filteredCalls.filter { it.category.equals("Personal", ignoreCase = true) }
+                                        "Business" -> filteredCalls.filter { it.category.equals("Business", ignoreCase = true) }
+                                        else -> filteredCalls
+                                    }
+                                }
+
+                                Column(
+                                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Text(
+                                        text = "Filter Logs by Type / Category (Actionable)",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 11.sp,
+                                        color = textSlateMuted
+                                    )
+                                    Row(
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        LogFilterCard(
+                                            title = "Inbound (Callbacks)",
+                                            count = inboundCount,
+                                            iconLabel = "📥",
+                                            accentColor = Color(0xFF06B6D4),
+                                            isActive = activeLogFilter == "INBOUND",
+                                            onClick = {
+                                                activeLogFilter = if (activeLogFilter == "INBOUND") null else "INBOUND"
+                                            },
+                                            modifier = Modifier.weight(1f).testTag("log_filter_inbound")
+                                        )
+                                        LogFilterCard(
+                                            title = "Outbound (Dialed)",
+                                            count = outboundCount,
+                                            iconLabel = "📤",
+                                            accentColor = Color(0xFF6366F1),
+                                            isActive = activeLogFilter == "OUTBOUND",
+                                            onClick = {
+                                                activeLogFilter = if (activeLogFilter == "OUTBOUND") null else "OUTBOUND"
+                                            },
+                                            modifier = Modifier.weight(1f).testTag("log_filter_outbound")
+                                        )
+                                    }
+                                    Row(
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        LogFilterCard(
+                                            title = "Personal (Total)",
+                                            count = personalCount,
+                                            iconLabel = "👤",
+                                            accentColor = Color(0xFFF59E0B),
+                                            isActive = activeLogFilter == "Personal",
+                                            onClick = {
+                                                activeLogFilter = if (activeLogFilter == "Personal") null else "Personal"
+                                            },
+                                            modifier = Modifier.weight(1f).testTag("log_filter_personal")
+                                        )
+                                        LogFilterCard(
+                                            title = "Business (Total)",
+                                            count = businessCount,
+                                            iconLabel = "💼",
+                                            accentColor = Color(0xFF10B981),
+                                            isActive = activeLogFilter == "Business",
+                                            onClick = {
+                                                activeLogFilter = if (activeLogFilter == "Business") null else "Business"
+                                            },
+                                            modifier = Modifier.weight(1f).testTag("log_filter_business")
+                                        )
+                                    }
+                                    
+                                    if (activeLogFilter != null) {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Text(
+                                                text = "Showing filtered: $activeLogFilter logs",
+                                                fontSize = 11.sp,
+                                                fontWeight = FontWeight.SemiBold,
+                                                color = Color(0xFF3B82F6)
+                                            )
+                                            Text(
+                                                text = "Show All (Reset)",
+                                                fontSize = 11.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = textSlateMuted,
+                                                modifier = Modifier
+                                                    .clickable { activeLogFilter = null }
+                                                    .padding(horizontal = 8.dp, vertical = 4.dp)
+                                                    .testTag("log_filter_reset")
+                                            )
+                                        }
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.height(12.dp))
+
+                                if (finalFilteredCalls.isEmpty()) {
                                     Column(
                                         modifier = Modifier
                                             .fillMaxWidth()
@@ -1101,7 +1254,7 @@ fun AgentDashboardScreen(
                                         verticalArrangement = Arrangement.Center
                                     ) {
                                         Text(
-                                            text = "🔍 No outbound activity recorded.",
+                                            text = "🔍 No matching activity recorded.",
                                             fontSize = 11.sp,
                                             fontWeight = FontWeight.SemiBold,
                                             color = textSlateMuted,
@@ -1109,7 +1262,7 @@ fun AgentDashboardScreen(
                                         )
                                         Spacer(modifier = Modifier.height(4.dp))
                                         Text(
-                                            text = "Select another period or initiate outbound calls onto active list accounts.",
+                                            text = if (activeLogFilter != null) "No calls matched filter '$activeLogFilter' for this period." else "Select another period or initiate outbound calls onto active list accounts.",
                                             fontSize = 9.sp,
                                             color = textSlateMuted.copy(alpha = 0.8f),
                                             textAlign = TextAlign.Center,
@@ -1118,7 +1271,7 @@ fun AgentDashboardScreen(
                                     }
                                 } else {
                                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                        filteredCalls.take(8).forEach { call ->
+                                        finalFilteredCalls.take(8).forEach { call ->
                                             // Call Log Item styled without solid white background
                                             Row(
                                                 modifier = Modifier
@@ -1146,28 +1299,82 @@ fun AgentDashboardScreen(
                                                 }
                                                 Spacer(modifier = Modifier.width(10.dp))
                                                 Column(modifier = Modifier.weight(1f)) {
-                                                    Text(
-                                                        text = call.debtorName,
-                                                        fontSize = 11.sp,
-                                                        fontWeight = FontWeight.Bold,
-                                                        color = textSlateColor
-                                                    )
+                                                    Row(
+                                                        modifier = Modifier.fillMaxWidth(),
+                                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                                        verticalAlignment = Alignment.CenterVertically
+                                                    ) {
+                                                        Text(
+                                                            text = call.debtorName,
+                                                            fontSize = 11.sp,
+                                                            fontWeight = FontWeight.Bold,
+                                                            color = textSlateColor
+                                                        )
+                                                        // Accent category badges
+                                                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                                            val isCInbound = call.callType.equals("INBOUND", ignoreCase = true)
+                                                            Box(
+                                                                modifier = Modifier
+                                                                    .background(if (isCInbound) Color(0xFF06B6D4).copy(alpha = 0.15f) else Color(0xFF6366F1).copy(alpha = 0.15f), RoundedCornerShape(4.dp))
+                                                                    .padding(horizontal = 4.dp, vertical = 2.dp)
+                                                            ) {
+                                                                Text(
+                                                                    text = if (isCInbound) "IN" else "OUT",
+                                                                    fontSize = 8.sp,
+                                                                    fontWeight = FontWeight.Bold,
+                                                                    color = if (isCInbound) Color(0xFF06B6D4) else Color(0xFF6366F1)
+                                                                )
+                                                            }
+                                                            val isCPersonal = call.category.equals("Personal", ignoreCase = true)
+                                                            Box(
+                                                                modifier = Modifier
+                                                                    .background(if (isCPersonal) Color(0xFFF59E0B).copy(alpha = 0.15f) else Color(0xFF10B981).copy(alpha = 0.15f), RoundedCornerShape(4.dp))
+                                                                    .padding(horizontal = 4.dp, vertical = 2.dp)
+                                                            ) {
+                                                                Text(
+                                                                    text = if (isCPersonal) "PERS" else "BIZ",
+                                                                    fontSize = 8.sp,
+                                                                    fontWeight = FontWeight.Bold,
+                                                                    color = if (isCPersonal) Color(0xFFF59E0B) else Color(0xFF10B981)
+                                                                )
+                                                            }
+                                                        }
+                                                    }
                                                     Text(
                                                         text = "${call.status} • ${call.time} • ${call.date}",
                                                         fontSize = 9.sp,
                                                         color = textSlateMuted
                                                     )
+                                                    if (call.notes.isNotBlank()) {
+                                                        // Strip potential formatting prefix from visible note
+                                                        val displayNote = call.notes
+                                                            .replace("[Type: OUTBOUND]", "")
+                                                            .replace("[Type: INBOUND]", "")
+                                                            .replace("[Category: Personal]", "")
+                                                            .replace("[Category: Business]", "")
+                                                            .trim()
+                                                        if (displayNote.isNotBlank()) {
+                                                            Spacer(modifier = Modifier.height(2.dp))
+                                                            Text(
+                                                                text = displayNote,
+                                                                fontSize = 9.sp,
+                                                                color = textSlateMuted.copy(alpha = 0.85f),
+                                                                maxLines = 2,
+                                                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                                            )
+                                                        }
+                                                    }
                                                 }
                                             }
                                         }
                                     }
                                 }
-                            }
                         }
                     }
                 }
             }
         }
+    }
     }
 
     // Modal Bottom Sheet displaying debtors filtered by bucket
@@ -1211,7 +1418,7 @@ fun AgentDashboardScreen(
                     )
                 }
 
-                HorizontalDivider(color = Color(0xFFF1F5F9))
+                HorizontalDivider(color = Color(0xFF1E293D))
 
                 if (filteredDebtors.isEmpty()) {
                     Box(
@@ -1261,34 +1468,66 @@ fun AgentDashboardScreen(
                                     )
                                 }
 
-                                IconButton(
-                                    onClick = {
-                                        // Instantiate Domain debtor
-                                        val model = Debtor(
-                                            id = entity.id,
-                                            name = entity.name,
-                                            overdueDays = if (entity.dpdBucket.contains("1-30")) 15 else 45,
-                                            outstandingAmount = entity.outstandingAmount,
-                                            customerSegment = entity.customerSegment,
-                                            phoneNumber = entity.contactNumber,
-                                            address = entity.address,
-                                            lastContactDate = entity.lastContactDate
-                                        )
-                                        coroutineScope.launch { sheetState.hide() }.invokeOnCompletion {
-                                            isSheetOpen = false
-                                            onCallDebtor(model)
-                                        }
-                                    },
-                                    modifier = Modifier
-                                        .size(40.dp)
-                                        .background(successGreen, CircleShape)
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Call,
-                                        contentDescription = "Dial",
-                                        tint = Color.White,
-                                        modifier = Modifier.size(18.dp)
-                                    )
+                                    // WhatsApp Button
+                                    IconButton(
+                                        onClick = {
+                                            try {
+                                                val cleanNumber = entity.contactNumber.replace(Regex("[^0-9]"), "")
+                                                val formattedNumber = if (cleanNumber.length == 10) "91$cleanNumber" else cleanNumber
+                                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://api.whatsapp.com/send?phone=$formattedNumber"))
+                                                context.startActivity(intent)
+                                            } catch (e: Exception) {
+                                                Toast.makeText(context, "WhatsApp is not installed or error opening link", Toast.LENGTH_SHORT).show()
+                                            }
+                                        },
+                                        modifier = Modifier
+                                            .size(40.dp)
+                                            .clip(CircleShape)
+                                            .background(Color(0xFF25D366))
+                                            .testTag("filtered_whatsapp_button_${entity.id}")
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Send,
+                                            contentDescription = "Message via WhatsApp",
+                                            tint = Color.White,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    }
+
+                                    // Call Button
+                                    IconButton(
+                                        onClick = {
+                                            // Instantiate Domain debtor
+                                            val model = Debtor(
+                                                id = entity.id,
+                                                name = entity.name,
+                                                overdueDays = if (entity.dpdBucket.contains("1-30")) 15 else 45,
+                                                outstandingAmount = entity.outstandingAmount,
+                                                customerSegment = entity.customerSegment,
+                                                phoneNumber = entity.contactNumber,
+                                                address = entity.address,
+                                                lastContactDate = entity.lastContactDate
+                                            )
+                                            coroutineScope.launch { sheetState.hide() }.invokeOnCompletion {
+                                                isSheetOpen = false
+                                                onCallDebtor(model)
+                                            }
+                                        },
+                                        modifier = Modifier
+                                            .size(40.dp)
+                                            .background(successGreen, CircleShape)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Call,
+                                            contentDescription = "Dial",
+                                            tint = Color.White,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -1311,7 +1550,7 @@ fun BucketGridCard(
         shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(containerColor = Color.Transparent),
         modifier = modifier
-            .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(14.dp))
+            .border(1.dp, Color(0xFF334155), RoundedCornerShape(14.dp))
             .clickable(onClick = onClick)
     ) {
         Column(
@@ -1331,7 +1570,7 @@ fun BucketGridCard(
                 Text(
                     text = "Filter",
                     fontSize = 10.sp,
-                    color = Color(0xFF2563EB),
+                    color = Color(0xFF60A5FA),
                     fontWeight = FontWeight.Bold
                 )
             }
@@ -1340,7 +1579,7 @@ fun BucketGridCard(
                 text = title,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF1E293B),
+                color = Color(0xFFF8FAFC),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
@@ -1351,6 +1590,65 @@ fun BucketGridCard(
                 fontWeight = FontWeight.ExtraBold,
                 color = accentColor
             )
+        }
+    }
+}
+
+@Composable
+fun LogFilterCard(
+    title: String,
+    count: Int,
+    iconLabel: String,
+    accentColor: Color,
+    isActive: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        shape = RoundedCornerShape(14.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isActive) accentColor.copy(alpha = 0.15f) else Color.Transparent
+        ),
+        modifier = modifier
+            .border(
+                width = if (isActive) 2.dp else 1.dp,
+                color = if (isActive) accentColor else Color(0xFFE2E8F0).copy(alpha = 0.3f),
+                shape = RoundedCornerShape(14.dp)
+            )
+            .clickable(onClick = onClick)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(
+                    text = title,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = if (isActive) Color.White else Color(0xFF94A3B8)
+                )
+                Text(
+                    text = "$count Calls",
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = if (isActive) accentColor else Color.White
+                )
+            }
+            Box(
+                modifier = Modifier
+                    .size(32.dp)
+                    .background(accentColor.copy(alpha = 0.12f), CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = iconLabel,
+                    fontSize = 14.sp
+                )
+            }
         }
     }
 }

@@ -38,5 +38,7 @@ data class CallLogEntity(
     val date: String = "",
     val time: String = "",
     val outcome: String = callDisposition,
-    val notes: String = agentNotes ?: ""
+    val notes: String = agentNotes ?: "",
+    val agentId: String = "T01",
+    val agentName: String = "Rajesh Kumar"
 )

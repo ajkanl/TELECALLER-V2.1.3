@@ -36,7 +36,8 @@ class AuthRepositoryImpl @Inject constructor(
                 userDao.insertUser(
                     UserEntity(
                         username = "admin",
-                        passwordHash = hashPassword("admin123")
+                        passwordHash = hashPassword("admin123"),
+                        isAdmin = true
                     )
                 )
             }
@@ -46,6 +47,12 @@ class AuthRepositoryImpl @Inject constructor(
         return if (user != null && user.passwordHash == hashPassword(password)) {
             _currentUser.value = user.username
             _isLoggedIn.value = true
+            
+            val isAlreadyPresent = securitySettingsStore.telecallersList.value.any { it.name.equals(user.username, ignoreCase = true) }
+            if (!isAlreadyPresent) {
+                securitySettingsStore.addTelecaller(user.username, user.isAdmin)
+            }
+            
             securitySettingsStore.handleAgentLogin(user.username)
             Result.success(Unit)
         } else {
@@ -100,22 +107,24 @@ class AuthRepositoryImpl @Inject constructor(
 
         // Write to Google Firebase Realtime Database (RTDB) under authorized_users node
         try {
-            val rtdb = com.google.firebase.database.FirebaseDatabase.getInstance("https://telecalller-pro-default-rtdb.firebaseio.com")
-            val userMap = mapOf(
-                "username" to finalUsername,
-                "email" to finalEmail,
-                "phoneNumber" to finalPhone,
-                "isAdmin" to isAdminUser,
-                "createdTime" to System.currentTimeMillis()
-            )
-            val pathKey = if (finalEmail.isNotBlank()) {
-                finalEmail.replace(".", "_")
-            } else if (finalPhone.isNotBlank()) {
-                finalPhone.replace("+", "")
-            } else {
-                finalUsername
+            val rtdb = com.example.data.util.FirebaseDatabaseConnector.getInstance()
+            if (rtdb != null) {
+                val userMap = mapOf(
+                    "username" to finalUsername,
+                    "email" to finalEmail,
+                    "phoneNumber" to finalPhone,
+                    "isAdmin" to isAdminUser,
+                    "createdTime" to System.currentTimeMillis()
+                )
+                val pathKey = if (finalEmail.isNotBlank()) {
+                    finalEmail.replace(".", "_")
+                } else if (finalPhone.isNotBlank()) {
+                    finalPhone.replace("+", "")
+                } else {
+                    finalUsername
+                }
+                rtdb.getReference("authorized_users").child(pathKey).setValue(userMap).await()
             }
-            rtdb.getReference("authorized_users").child(pathKey).setValue(userMap).await()
         } catch (e: Exception) {
             android.util.Log.e("AuthRepository", "Failed to sync registered user to RTDB on signup: ${e.message}", e)
         }
@@ -174,22 +183,24 @@ class AuthRepositoryImpl @Inject constructor(
 
         // Write to Google Firebase Realtime Database (RTDB) under authorized_users node
         try {
-            val rtdb = com.google.firebase.database.FirebaseDatabase.getInstance("https://telecalller-pro-default-rtdb.firebaseio.com")
-            val userMap = mapOf(
-                "username" to trimmedUser,
-                "email" to email.trim().lowercase(),
-                "phoneNumber" to phoneNumber.trim(),
-                "isAdmin" to isAdmin,
-                "createdTime" to System.currentTimeMillis()
-            )
-            val pathKey = if (email.isNotBlank()) {
-                email.trim().lowercase().replace(".", "_")
-            } else if (phoneNumber.isNotBlank()) {
-                phoneNumber.trim().replace("+", "")
-            } else {
-                trimmedUser
+            val rtdb = com.example.data.util.FirebaseDatabaseConnector.getInstance()
+            if (rtdb != null) {
+                val userMap = mapOf(
+                    "username" to trimmedUser,
+                    "email" to email.trim().lowercase(),
+                    "phoneNumber" to phoneNumber.trim(),
+                    "isAdmin" to isAdmin,
+                    "createdTime" to System.currentTimeMillis()
+                )
+                val pathKey = if (email.isNotBlank()) {
+                    email.trim().lowercase().replace(".", "_")
+                } else if (phoneNumber.isNotBlank()) {
+                    phoneNumber.trim().replace("+", "")
+                } else {
+                    trimmedUser
+                }
+                rtdb.getReference("authorized_users").child(pathKey).setValue(userMap).await()
             }
-            rtdb.getReference("authorized_users").child(pathKey).setValue(userMap).await()
         } catch (e: Exception) {
             android.util.Log.e("AuthRepository", "Failed to sync authorized user to RTDB: ${e.message}", e)
         }
@@ -205,14 +216,18 @@ class AuthRepositoryImpl @Inject constructor(
         
         // 1. Try checking in Google Firebase Database (Realtime Database - RTDB)
         try {
-            val rtdb = com.google.firebase.database.FirebaseDatabase.getInstance("https://telecalller-pro-default-rtdb.firebaseio.com")
-            val snap = rtdb.getReference("authorized_users")
-                .orderByChild("email")
-                .equalTo(cleanEmail)
-                .get()
-                .await()
+            val rtdb = com.example.data.util.FirebaseDatabaseConnector.getInstance()
+            val snap = if (rtdb != null) {
+                rtdb.getReference("authorized_users")
+                    .orderByChild("email")
+                    .equalTo(cleanEmail)
+                    .get()
+                    .await()
+            } else {
+                null
+            }
 
-            if (snap.exists() && snap.hasChildren()) {
+            if (snap != null && snap.exists() && snap.hasChildren()) {
                 val matchedNode = snap.children.first()
                 val username = matchedNode.child("username").getValue(String::class.java) ?: cleanEmail.substringBefore("@")
                 val isAdmin = matchedNode.child("isAdmin").getValue(Boolean::class.java) ?: false
@@ -278,6 +293,10 @@ class AuthRepositoryImpl @Inject constructor(
             val name = existingUserWithEmail.username
             _currentUser.value = name
             _isLoggedIn.value = true
+            val isAlreadyPresent = securitySettingsStore.telecallersList.value.any { it.name.equals(name, ignoreCase = true) }
+            if (!isAlreadyPresent) {
+                securitySettingsStore.addTelecaller(name, existingUserWithEmail.isAdmin)
+            }
             securitySettingsStore.handleAgentLogin(name)
             return Result.success(Unit)
         }
@@ -311,14 +330,18 @@ class AuthRepositoryImpl @Inject constructor(
 
         // 1. Try checking in Google Firebase Database (Realtime Database - RTDB)
         try {
-            val rtdb = com.google.firebase.database.FirebaseDatabase.getInstance("https://telecalller-pro-default-rtdb.firebaseio.com")
-            val snap = rtdb.getReference("authorized_users")
-                .orderByChild("phoneNumber")
-                .equalTo(cleanPhone)
-                .get()
-                .await()
+            val rtdb = com.example.data.util.FirebaseDatabaseConnector.getInstance()
+            val snap = if (rtdb != null) {
+                rtdb.getReference("authorized_users")
+                    .orderByChild("phoneNumber")
+                    .equalTo(cleanPhone)
+                    .get()
+                    .await()
+            } else {
+                null
+            }
 
-            if (snap.exists() && snap.hasChildren()) {
+            if (snap != null && snap.exists() && snap.hasChildren()) {
                 val matchedNode = snap.children.first()
                 val username = matchedNode.child("username").getValue(String::class.java) ?: "PhoneUser_${cleanPhone.takeLast(4)}"
                 val isAdmin = matchedNode.child("isAdmin").getValue(Boolean::class.java) ?: false
@@ -384,6 +407,10 @@ class AuthRepositoryImpl @Inject constructor(
             val name = matchedLocalUser.username
             _currentUser.value = name
             _isLoggedIn.value = true
+            val isAlreadyPresent = securitySettingsStore.telecallersList.value.any { it.name.equals(name, ignoreCase = true) }
+            if (!isAlreadyPresent) {
+                securitySettingsStore.addTelecaller(name, matchedLocalUser.isAdmin)
+            }
             securitySettingsStore.handleAgentLogin(name)
             return Result.success(Unit)
         }
@@ -406,6 +433,55 @@ class AuthRepositoryImpl @Inject constructor(
         }
 
         return Result.failure(Exception("This phone number is not listed/authorized in the Firebase database."))
+    }
+
+    override suspend fun deleteTelecaller(username: String): Result<Unit> {
+        val trimmedUser = username.trim()
+        val user = userDao.getUserByUsername(trimmedUser)
+        
+        // Remove from local database
+        userDao.deleteUserByUsername(trimmedUser)
+
+        val targetDocId = if (user != null && user.email.isNotBlank()) {
+            user.email.trim().lowercase()
+        } else if (user != null && user.phoneNumber.isNotBlank()) {
+            user.phoneNumber.trim()
+        } else {
+            trimmedUser
+        }
+
+        // Delete from Google Firebase Database (Firestore)
+        try {
+            val db = com.google.firebase.firestore.FirebaseFirestore.getInstance()
+            db.collection("authorized_users").document(targetDocId).delete()
+        } catch (e: Exception) {
+            android.util.Log.e("AuthRepository", "Failed to delete from Firestore: ${e.message}", e)
+        }
+
+        // Delete from Google Firebase Realtime Database (RTDB)
+        try {
+            val rtdb = com.example.data.util.FirebaseDatabaseConnector.getInstance()
+            if (rtdb != null) {
+                val pathKey = if (user != null && user.email.isNotBlank()) {
+                    user.email.trim().lowercase().replace(".", "_")
+                } else if (user != null && user.phoneNumber.isNotBlank()) {
+                    user.phoneNumber.trim().replace("+", "")
+                } else {
+                    trimmedUser
+                }
+                rtdb.getReference("authorized_users").child(pathKey).removeValue()
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("AuthRepository", "Failed to delete from RTDB: ${e.message}", e)
+        }
+
+        // Remove from the securitySettingsStore's list
+        val agentInStore = securitySettingsStore.telecallersList.value.find { it.name.equals(trimmedUser, ignoreCase = true) }
+        if (agentInStore != null) {
+            securitySettingsStore.removeTelecaller(agentInStore.id)
+        }
+
+        return Result.success(Unit)
     }
 
     override suspend fun logout() {

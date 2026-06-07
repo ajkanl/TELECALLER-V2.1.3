@@ -76,6 +76,12 @@ class HomeViewModel @Inject constructor(
 
     val telecallersList = securitySettingsStore.telecallersList
 
+    val activeImpersonatedAgent: StateFlow<com.example.domain.security.TelecallerAgent?> = securitySettingsStore.activeImpersonatedAgent
+
+    fun updateAgentProfile(agentId: String, name: String, profilePicture: String?) {
+        securitySettingsStore.updateAgentProfile(agentId, name, profilePicture)
+    }
+
     // Expose flows from the domain repository
     val debtors = repository.getDebtors()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -168,13 +174,18 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             val currentDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
             val currentTime = SimpleDateFormat("hh:mm a", Locale.getDefault()).format(Date())
+            val activeAgent = securitySettingsStore.activeImpersonatedAgent.value
+            val agentId = activeAgent?.id ?: "T01"
+            val agentName = activeAgent?.name ?: (securitySettingsStore.telecallersList.value.firstOrNull { it.id == "T01" }?.name ?: "Rajesh Kumar")
             repository.saveCallLog(
                 debtorId = debtorId,
                 debtorName = debtorName,
                 date = currentDate,
                 time = currentTime,
                 outcome = outcome,
-                notes = notes
+                notes = notes,
+                agentId = agentId,
+                agentName = agentName
             )
             val updatedDebtor = _selectedDebtor.value?.copy(lastContactDate = "0 Days Ago")
             if (updatedDebtor != null) {

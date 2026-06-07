@@ -56,6 +56,8 @@ fun CallDispositionScreen(
     var ptpDate by remember { mutableStateOf("") }
     var ptpAmount by remember { mutableStateOf("") }
     var notesText by remember { mutableStateOf("") }
+    var selectedCallType by remember { mutableStateOf("Outbound") } // "Outbound", "Inbound"
+    var selectedCategory by remember { mutableStateOf("Business") } // "Business", "Personal"
 
     // Student detail states (Editable at end of call)
     var studentName by remember { mutableStateOf(debtor.name) }
@@ -331,6 +333,108 @@ fun CallDispositionScreen(
                 }
             }
 
+            // --- NEW: CALL TYPE & CATEGORY SELECTION ---
+            Card(
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = cardBackgroundColor),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(1.dp, dividerColor, RoundedCornerShape(16.dp))
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text(
+                        text = "CALL METRICS DIRECTION & CATEGORY",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = primaryBlue,
+                        letterSpacing = 0.5.sp
+                    )
+
+                    // Call Direction (Type)
+                    Text(
+                        text = "Call Direction",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = textSlateMuted,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Color.Black.copy(alpha = 0.2f), RoundedCornerShape(12.dp))
+                            .border(1.dp, dividerColor, RoundedCornerShape(12.dp))
+                            .padding(4.dp),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        listOf("Outbound" to "📤 Outbound (Dialed)", "Inbound" to "📥 Inbound (Callback)").forEach { (key, label) ->
+                            val isSelected = selectedCallType == key
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .background(
+                                        if (isSelected) primaryBlue else Color.Transparent,
+                                        RoundedCornerShape(8.dp)
+                                    )
+                                    .clickable { selectedCallType = key }
+                                    .padding(vertical = 10.dp)
+                                    .testTag("call_type_option_$key"),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = label,
+                                    color = if (isSelected) Color.White else textSlateColor,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 12.sp
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    // Call Category (Purpose)
+                    Text(
+                        text = "Call Type Classification",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = textSlateMuted,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Color.Black.copy(alpha = 0.2f), RoundedCornerShape(12.dp))
+                            .border(1.dp, dividerColor, RoundedCornerShape(12.dp))
+                            .padding(4.dp),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        listOf("Business" to "💼 Business Recoveries", "Personal" to "👤 Personal Follow-up").forEach { (key, label) ->
+                            val isSelected = selectedCategory == key
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .background(
+                                        if (isSelected) primaryBlue else Color.Transparent,
+                                        RoundedCornerShape(8.dp)
+                                    )
+                                    .clickable { selectedCategory = key }
+                                    .padding(vertical = 10.dp)
+                                    .testTag("call_category_option_$key"),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = label,
+                                    color = if (isSelected) Color.White else textSlateColor,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 12.sp
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
             // --- 2. OUTCOME SELECTION GRID ---
             Text(
                 text = "Select Disposition Outcome",
@@ -549,10 +653,14 @@ fun CallDispositionScreen(
             Button(
                 onClick = {
                     if (isFormValid) {
+                        val typeTag = if (selectedCallType == "Inbound") "[Type: INBOUND]" else "[Type: OUTBOUND]"
+                        val categoryTag = if (selectedCategory == "Personal") "[Category: Personal]" else "[Category: Business]"
+                        val tagsPrefix = "$typeTag$categoryTag\n"
+
                         val finalNotes = if (selectedOutcome == "Promise to Pay (PTP)") {
-                            "Promised PTP Date: $ptpDate, Amount: ₹$ptpAmount\n$notesText"
+                            "${tagsPrefix}Promised PTP Date: $ptpDate, Amount: ₹$ptpAmount\n$notesText"
                         } else {
-                            notesText
+                            "$tagsPrefix$notesText"
                         }
 
                         // Generate/Resolve unique clean ID for this student if currently blank

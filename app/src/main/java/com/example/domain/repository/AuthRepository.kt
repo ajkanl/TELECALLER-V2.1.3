@@ -17,5 +17,6 @@ interface AuthRepository {
         phoneNumber: String = "",
         isAdmin: Boolean = false
     ): Result<Unit>
+    suspend fun deleteTelecaller(username: String): Result<Unit>
     suspend fun logout()
 }

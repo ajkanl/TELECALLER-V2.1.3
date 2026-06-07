@@ -211,6 +211,7 @@ class MainActivity : ComponentActivity() {
                         }
 
                         val isLoggedIn by authViewModel.isLoggedIn.collectAsState()
+                        val currentUser by authViewModel.currentUser.collectAsState()
                         val selectedDebtor by homeViewModel.selectedDebtor.collectAsState()
                         val dispositionDebtor by homeViewModel.dispositionDebtor.collectAsState()
 
@@ -442,7 +443,7 @@ class MainActivity : ComponentActivity() {
                                      if (showUploadDatabaseScreen) {
                                          UploadDatabaseScreen(
                                              homeViewModel = homeViewModel,
-                                             onBack = { showUploadDatabaseScreen = false }
+                                             currentUser = currentUser, onBack = { showUploadDatabaseScreen = false }
                                          )
                                      }
                                 }

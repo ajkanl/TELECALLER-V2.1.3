@@ -54,6 +54,13 @@ class SecurityViewModel @Inject constructor(
         securitySettingsStore.addTelecaller(name, isAdmin)
     }
 
+    fun removeTelecaller(name: String, onResult: (Result<Unit>) -> Unit = {}) {
+        viewModelScope.launch {
+            val result = authRepository.deleteTelecaller(name)
+            onResult(result)
+        }
+    }
+
     fun registerTelecaller(
         name: String,
         passwordPlain: String,
@@ -80,6 +87,14 @@ class SecurityViewModel @Inject constructor(
 
     fun updateAgentTarget(agentId: String, targetAmount: Double) {
         securitySettingsStore.updateAgentTarget(agentId, targetAmount)
+    }
+
+    fun updateAgentMonthlyTarget(agentId: String, month: String, amount: Double) {
+        securitySettingsStore.updateAgentMonthlyTarget(agentId, month, amount)
+    }
+
+    fun updateAgentProfile(agentId: String, name: String, profilePicture: String?) {
+        securitySettingsStore.updateAgentProfile(agentId, name, profilePicture)
     }
 
     /**

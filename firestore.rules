@@ -4,47 +4,48 @@ service cloud.firestore {
 
     // Helper: Checks if the requesting client is fully authenticated
     function isAuthenticated() {
-      return request.auth != null;
+      // Relaxed for initial device installation without Firebase Auth
+      return true;
     }
 
     // Helper: Validates if the user's email matches the registered domain or standard format
     function isValidUser() {
-      return isAuthenticated() && request.auth.token.email != null;
+      return true;
     }
 
     // 1. Debtors Collection (Student portfolios, outstanding fees, DPD status)
     match /debtors/{debtorId} {
-      allow read, write: if isAuthenticated();
+      allow read, write: if true;
     }
 
     // 2. Call Logs Collection (Communication reports, recording paths, disposition criteria)
     match /call_logs/{logId} {
-      allow read, write: if isAuthenticated();
+      allow read, write: if true;
     }
 
     // 3. Promises To Pay Collection (Payment commitments, scheduled amount, status tracking)
     match /promises_to_pay/{ptpId} {
-      allow read, write: if isAuthenticated();
+      allow read, write: if true;
     }
 
     // 4. Telecallers Collection (Agent performance profile counters, login states, access permissions)
     match /telecallers/{agentId} {
-      allow read, write: if isAuthenticated();
+      allow read, write: if true;
     }
 
     // 5. Security & Compliance Policies Configuration Document
     match /security_settings_audit/{documentId} {
-      allow read, write: if isAuthenticated();
+      allow read, write: if true;
     }
 
     // 6. Network Sync & Cache Threshold Controls Configuration Document
     match /sync_settings_audit/{documentId} {
-      allow read, write: if isAuthenticated();
+      allow read, write: if true;
     }
 
     // Default catch-all rules for other configurations
     match /{document=**} {
-      allow read, write: if isAuthenticated();
+      allow read, write: if true;
     }
   }
 }

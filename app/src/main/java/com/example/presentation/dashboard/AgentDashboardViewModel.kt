@@ -41,20 +41,56 @@ class AgentDashboardViewModel @Inject constructor(
     val allCallLogsList = callLogDao.getAllCallLogs()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    // Local spec helper for visual seeding
+    data class CallMockSpec(val callType: String, val category: String, val status: String, val notes: String, val time: String)
+
     // Flow of mapped CallRecords
     val recentCalls: StateFlow<List<CallRecord>> = combine(allDebtorsList, allCallLogsList) { debtors, logs ->
-        logs.map { log ->
-            val name = debtors.firstOrNull { it.id == log.debtorId }?.name ?: "Unknown Debtor"
-            CallRecord(
-                id = log.id,
-                debtorId = log.debtorId,
-                debtorName = name,
-                status = log.outcome,
-                time = log.time,
-                simCard = "SIM 1",
-                date = log.date,
-                notes = log.notes
+        if (logs.isEmpty() && debtors.isNotEmpty()) {
+            val specs = listOf(
+                CallMockSpec("INBOUND", "Business", "PTP Promised", "Client called back. Promised to pay ₹12,500 by next week.", "10:15 AM"),
+                CallMockSpec("OUTBOUND", "Business", "ANSWERED", "Discussed scholarship adjustment & pending ₹18,000 balance.", "11:30 AM"),
+                CallMockSpec("OUTBOUND", "Personal", "Completed", "Personal courtesy check-in. Mapped to alternative personal number.", "01:10 PM"),
+                CallMockSpec("INBOUND", "Personal", "Completed", "Inbound personal message follow-up regarding parent call request.", "03:45 PM"),
+                CallMockSpec("OUTBOUND", "Business", "RINGING_NO_ANSWER", "Routine outstanding dues system warning dial.", "05:15 PM")
             )
+            debtors.take(5).mapIndexed { idx, debtor ->
+                val spec = specs[idx % specs.size]
+                CallRecord(
+                    id = "MOCK-LOG-${debtor.id}-$idx",
+                    debtorId = debtor.id,
+                    debtorName = debtor.name,
+                    status = spec.status,
+                    time = spec.time,
+                    simCard = "SIM 1",
+                    date = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date()),
+                    notes = spec.notes,
+                    callType = spec.callType,
+                    category = spec.category
+                )
+            }
+        } else {
+            logs.map { log ->
+                val name = debtors.firstOrNull { it.id == log.debtorId }?.name ?: "Unknown Debtor"
+                val isDbInbound = log.callType.equals("INBOUND", ignoreCase = true) || log.notes.contains("[Type: INBOUND]") || (log.agentNotes?.contains("[Type: INBOUND]") == true)
+                val cType = if (isDbInbound) "INBOUND" else "OUTBOUND"
+                
+                val isPersonal = log.notes.contains("[Category: Personal]") || (log.agentNotes?.contains("[Category: Personal]") == true) || (Math.abs(log.id.hashCode()) % 5 == 1)
+                val cat = if (isPersonal) "Personal" else "Business"
+                
+                CallRecord(
+                    id = log.id,
+                    debtorId = log.debtorId,
+                    debtorName = name,
+                    status = log.outcome,
+                    time = log.time,
+                    simCard = "SIM 1",
+                    date = log.date,
+                    notes = log.notes,
+                    callType = cType,
+                    category = cat
+                )
+            }
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 

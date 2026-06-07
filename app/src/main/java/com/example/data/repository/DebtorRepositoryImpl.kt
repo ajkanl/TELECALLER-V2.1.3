@@ -266,13 +266,16 @@ vaibhav khatri;Satish;2005-12-16;;GNM;2024-2027;83;8798598678;8295382085
         date: String,
         time: String,
         outcome: String,
-        notes: String
+        notes: String,
+        agentId: String,
+        agentName: String
     ) {
+        val derivedCallType = if (notes.contains("[Type: INBOUND]")) "INBOUND" else "OUTBOUND"
         val newCallLog = CallLogEntity(
             debtorId = debtorId,
             callTimestamp = System.currentTimeMillis(),
             durationSeconds = 30,
-            callType = "OUTBOUND",
+            callType = derivedCallType,
             callDisposition = outcome,
             agentNotes = notes,
             recordingFilePath = null,
@@ -280,9 +283,57 @@ vaibhav khatri;Satish;2005-12-16;;GNM;2024-2027;83;8798598678;8295382085
             date = date,
             time = time,
             outcome = outcome,
-            notes = notes
+            notes = notes,
+            agentId = agentId,
+            agentName = agentName
         )
         callLogDao.insertCallLog(newCallLog)
+
+        // Live Cloud Synchronization (Telecaller & Remarks Wise)
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val db = com.google.firebase.firestore.FirebaseFirestore.getInstance()
+                val rawSlug = outcome.replace("/", "_").replace(" ", "_").trim()
+                val parentDocId = "${agentId}_$rawSlug"
+                val parentDocRef = db.collection("telecaller_remarks_wise").document(parentDocId)
+
+                val parentData = mapOf(
+                    "telecallerId" to agentId,
+                    "telecallerName" to agentName,
+                    "remarkOutcome" to outcome,
+                    "lastUpdated" to System.currentTimeMillis()
+                )
+                parentDocRef.set(parentData, com.google.firebase.firestore.SetOptions.merge())
+
+                val callDocRef = parentDocRef.collection("calls").document(newCallLog.id)
+                val callDetailData = mapOf(
+                    "id" to newCallLog.id,
+                    "debtorId" to newCallLog.debtorId,
+                    "debtorName" to debtorName,
+                    "timestamp" to newCallLog.callTimestamp,
+                    "date" to newCallLog.date,
+                    "time" to newCallLog.time,
+                    "outcome" to outcome,
+                    "remarks" to notes,
+                    "callType" to derivedCallType,
+                    "agentId" to agentId,
+                    "agentName" to agentName
+                )
+                callDocRef.set(callDetailData)
+
+                // RTDB Synchronous mirror copy
+                try {
+                    val rtdb = com.example.data.util.FirebaseDatabaseConnector.getInstance()
+                    if (rtdb != null) {
+                        rtdb.reference.child("telecaller_remarks_wise").child(agentId).child(rawSlug).child(newCallLog.id).setValue(callDetailData)
+                    }
+                } catch (rtdbEx: Exception) {
+                    Log.e("FirebaseSync", "RTDB Live upload skipped/failed: ${rtdbEx.message}")
+                }
+            } catch (fsEx: Exception) {
+                Log.e("FirebaseSync", "Firestore live upload failed: ${fsEx.message}")
+            }
+        }
 
         // Increment daily call progress count
         val currentPair = dailyProgress.value

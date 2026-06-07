@@ -13,7 +13,7 @@ import com.example.data.local.entity.PromiseToPayEntity
 
 @Database(
     entities = [UserEntity::class, DebtorEntity::class, CallLogEntity::class, PromiseToPayEntity::class],
-    version = 5,
+    version = 6,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
