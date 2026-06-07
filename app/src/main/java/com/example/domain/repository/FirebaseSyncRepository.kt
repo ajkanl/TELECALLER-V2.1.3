@@ -10,6 +10,10 @@ interface FirebaseSyncRepository {
     val syncEvents: SharedFlow<String>
     suspend fun syncBulkDataFromCloud(updatedList: List<DebtorEntity>)
 
+    suspend fun pullDataFromFirestore(
+        securitySettingsStore: com.example.domain.security.SecuritySettingsStore
+    ): Boolean
+
     suspend fun pushAllDataToFirestore(
         debtors: List<DebtorEntity>,
         callLogs: List<CallLogEntity>,

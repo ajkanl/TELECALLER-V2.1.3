@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -623,6 +624,121 @@ fun CallDispositionScreen(
                     unfocusedTextColor = textSlateColor
                 )
             )
+
+            // --- AI Notes Helper Panel ---
+            val isOptimizingNotes by viewModel.isOptimizingNotes.collectAsState()
+            val aiOptimizedNotes by viewModel.aiOptimizedNotesState.collectAsState()
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(Color(0xFF0F172A))
+                    .border(1.dp, Color(0xFF334155), RoundedCornerShape(16.dp))
+                    .padding(14.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Star,
+                            contentDescription = "AI Star Magic",
+                            tint = Color(0xFF38BDF8),
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Text(
+                            text = "Gemini AI Log Assistant",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+                    }
+
+                    if (isOptimizingNotes) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(18.dp),
+                            color = Color(0xFF38BDF8),
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        TextButton(
+                            onClick = {
+                                if (notesText.isNotBlank()) {
+                                    viewModel.optimizeCallNotes(notesText)
+                                        } else {
+                                    Toast.makeText(context, "Please enter some rough notes first!", Toast.LENGTH_SHORT).show()
+                                }
+                            },
+                            colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFF38BDF8))
+                        ) {
+                            Text("✨ Optimize with AI", style = MaterialTheme.typography.labelLarge)
+                        }
+                    }
+                }
+
+                Text(
+                    text = "Refines spelling, extracts client sentiment, and formats structured call logs in 1-tap.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = textSlateMuted
+                )
+
+                if (aiOptimizedNotes != null) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(Color(0xFF1E293B))
+                            .border(1.5.dp, Color(0xFF38BDF8).copy(alpha = 0.5f), RoundedCornerShape(12.dp))
+                            .padding(12.dp)
+                    ) {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text(
+                                text = "Optimized Draft Log:",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF38BDF8)
+                            )
+                            Text(
+                                text = aiOptimizedNotes!!,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = Color.White
+                            )
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.End,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                TextButton(
+                                    onClick = { viewModel.clearOptimizedNotes() }
+                                ) {
+                                    Text("Dismiss", color = textSlateMuted, style = MaterialTheme.typography.labelMedium)
+                                }
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Button(
+                                    onClick = {
+                                        notesText = aiOptimizedNotes!!
+                                        viewModel.clearOptimizedNotes()
+                                    },
+                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0EA5E9))
+                                ) {
+                                    Text("Apply & Use Draft", color = Color.White, style = MaterialTheme.typography.labelMedium)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
 
             // Dynamic Informational Notice
             Row(

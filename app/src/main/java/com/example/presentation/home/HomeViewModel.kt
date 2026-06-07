@@ -29,8 +29,100 @@ class HomeViewModel @Inject constructor(
     private val repository: DebtorRepository,
     private val securitySettingsStore: SecuritySettingsStore,
     private val debtorDao: DebtorDao,
-    private val collectionDao: com.example.data.local.dao.CollectionDao
+    private val collectionDao: com.example.data.local.dao.CollectionDao,
+    private val geminiRepository: com.example.domain.repository.GeminiRepository
 ) : ViewModel() {
+
+    // --- AI SCRIPT AND LOG NOTES ENHANCEMENT STATES ---
+    private val _aiScriptState = MutableStateFlow<String?>(null)
+    val aiScriptState: StateFlow<String?> = _aiScriptState.asStateFlow()
+
+    private val _isGeneratingScript = MutableStateFlow(false)
+    val isGeneratingScript: StateFlow<Boolean> = _isGeneratingScript.asStateFlow()
+
+    private val _aiOptimizedNotesState = MutableStateFlow<String?>(null)
+    val aiOptimizedNotesState: StateFlow<String?> = _aiOptimizedNotesState.asStateFlow()
+
+    private val _isOptimizingNotes = MutableStateFlow(false)
+    val isOptimizingNotes: StateFlow<Boolean> = _isOptimizingNotes.asStateFlow()
+
+    private val _aiPortfolioAnalysisState = MutableStateFlow<String?>(null)
+    val aiPortfolioAnalysisState: StateFlow<String?> = _aiPortfolioAnalysisState.asStateFlow()
+
+    private val _isGeneratingPortfolioAnalysis = MutableStateFlow(false)
+    val isGeneratingPortfolioAnalysis: StateFlow<Boolean> = _isGeneratingPortfolioAnalysis.asStateFlow()
+
+    fun generatePortfolioAnalysis(
+        debtorsCount: Int,
+        totalOutstanding: Double,
+        activePtpCount: Int,
+        recentLogsSummary: String
+    ) {
+        viewModelScope.launch {
+            _isGeneratingPortfolioAnalysis.value = true
+            try {
+                val analysis = geminiRepository.generatePortfolioExecutiveAnalysis(
+                    debtorsCount = debtorsCount,
+                    totalOutstanding = totalOutstanding,
+                    activePtpCount = activePtpCount,
+                    recentLogsSummary = recentLogsSummary
+                )
+                _aiPortfolioAnalysisState.value = analysis
+            } catch (e: Exception) {
+                _aiPortfolioAnalysisState.value = "Failed to generate report: ${e.localizedMessage}"
+            } finally {
+                _isGeneratingPortfolioAnalysis.value = false
+            }
+        }
+    }
+
+    fun clearPortfolioAnalysis() {
+        _aiPortfolioAnalysisState.value = null
+    }
+
+    fun generateNegotiationScript(
+        studentName: String,
+        amount: Double,
+        college: String,
+        segment: String,
+        previousNotes: String
+    ) {
+        viewModelScope.launch {
+            _isGeneratingScript.value = true
+            try {
+                val script = geminiRepository.generateNegotiationScript(
+                    studentName, amount, college, segment, previousNotes
+                )
+                _aiScriptState.value = script
+            } catch (e: Exception) {
+                _aiScriptState.value = "Failed to generate script: ${e.localizedMessage}"
+            } finally {
+                _isGeneratingScript.value = false
+            }
+        }
+    }
+
+    fun optimizeCallNotes(rawNotes: String) {
+        viewModelScope.launch {
+            _isOptimizingNotes.value = true
+            try {
+                val optimized = geminiRepository.optimizeCallNotes(rawNotes)
+                _aiOptimizedNotesState.value = optimized
+            } catch (e: Exception) {
+                _aiOptimizedNotesState.value = "Failed to optimize notes: ${e.localizedMessage}"
+            } finally {
+                _isOptimizingNotes.value = false
+            }
+        }
+    }
+
+    fun clearScript() {
+        _aiScriptState.value = null
+    }
+
+    fun clearOptimizedNotes() {
+        _aiOptimizedNotesState.value = null
+    }
 
     fun getPromisesForDebtor(debtorId: String) = collectionDao.getAllPromisesToPay().map { list ->
         list.filter { it.debtorId == debtorId }

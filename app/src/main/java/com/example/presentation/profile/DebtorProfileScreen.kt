@@ -25,6 +25,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Call
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -32,6 +33,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
@@ -58,6 +60,9 @@ import com.example.presentation.home.HomeViewModel
 fun DebtorProfileScreen(viewModel: HomeViewModel, onBack: () -> Unit) {
     val context = LocalContext.current
     val debtor by viewModel.selectedDebtor.collectAsState()
+    
+    val isGeneratingScript by viewModel.isGeneratingScript.collectAsState()
+    val aiScript by viewModel.aiScriptState.collectAsState()
 
     if (debtor == null) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -282,6 +287,117 @@ fun DebtorProfileScreen(viewModel: HomeViewModel, onBack: () -> Unit) {
                                 shape = RoundedCornerShape(12.dp)
                             ) {
                                 Text("Save Changes", fontWeight = FontWeight.Bold, color = Color.White)
+                            }
+                        }
+                    }
+                }
+            }
+
+            // --- AI NEGOTIATION SCRIPT ASSISTANT ---
+            item {
+                Card(
+                    shape = RoundedCornerShape(24.dp),
+                    colors = CardDefaults.cardColors(containerColor = cardBackgroundColor),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .border(1.dp, Color(0xFF1E293B), RoundedCornerShape(24.dp))
+                ) {
+                    Column(modifier = Modifier.padding(20.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Star,
+                                    contentDescription = "AI Star Magic",
+                                    tint = Color(0xFF38BDF8),
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Text(
+                                    text = "LIVE AI NEGOTIATION SCRIPT",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF38BDF8),
+                                    letterSpacing = 0.5.sp
+                                )
+                            }
+                            
+                            if (isGeneratingScript) {
+                                androidx.compose.material3.CircularProgressIndicator(
+                                    modifier = Modifier.size(16.dp),
+                                    color = Color(0xFF38BDF8),
+                                    strokeWidth = 2.dp
+                                )
+                            } else {
+                                androidx.compose.material3.TextButton(
+                                    onClick = {
+                                        viewModel.generateNegotiationScript(
+                                            studentName = currentDebtor.name,
+                                            amount = currentDebtor.outstandingAmount,
+                                            college = currentDebtor.address,
+                                            segment = currentDebtor.customerSegment,
+                                            previousNotes = callLogs.firstOrNull()?.notes ?: ""
+                                        )
+                                    },
+                                    colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFF38BDF8))
+                                ) {
+                                    Text(
+                                        if (aiScript != null) "🔄 Regenerate" else "✨ Draft Pitch",
+                                        style = MaterialTheme.typography.labelLarge
+                                    )
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        Text(
+                            text = "Tailors a polite but highly persuasive speaking template considering student's specific overdue amount, department, previous logs, and segment rules.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = textSlateMuted
+                        )
+
+                        if (aiScript != null) {
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(16.dp))
+                                    .background(Color(0xFF0F172A))
+                                    .border(1.dp, Color(0xFF334155), RoundedCornerShape(16.dp))
+                                    .padding(14.dp)
+                            ) {
+                                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = "Tailored Recoveries Pitch",
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color(0xFF38BDF8)
+                                        )
+                                        androidx.compose.material3.TextButton(
+                                            onClick = { viewModel.clearScript() },
+                                            colors = ButtonDefaults.textButtonColors(contentColor = textSlateMuted)
+                                        ) {
+                                            Text("Close Draft", fontSize = 11.sp)
+                                        }
+                                    }
+
+                                    Text(
+                                        text = aiScript!!,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = textSlateColor
+                                    )
+                                }
                             }
                         }
                     }

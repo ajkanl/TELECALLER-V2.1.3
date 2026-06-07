@@ -172,7 +172,7 @@ fun DataSynchronizationSettings(
                             shape = RoundedCornerShape(8.dp),
                             enabled = !isSyncing,
                             modifier = Modifier
-                                .weight(1.3f)
+                                .weight(1f)
                                 .height(46.dp)
                                 .testTag("btn_trigger_sync_now")
                         ) {
@@ -183,10 +183,23 @@ fun DataSynchronizationSettings(
                                     strokeWidth = 2.dp
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
-                                Text("Sync...", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                Text("Sync...", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color.White)
                             } else {
-                                Text("☁️ SYNC NOW", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                Text("☁️ SYNC NOW", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color.White)
                             }
+                        }
+
+                        Button(
+                            onClick = { viewModel.triggerCategoryWisePullFromCloud() },
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981)),
+                            shape = RoundedCornerShape(8.dp),
+                            enabled = !isSyncing,
+                            modifier = Modifier
+                                .weight(1.05f)
+                                .height(46.dp)
+                                .testTag("btn_trigger_pull_cloud")
+                        ) {
+                            Text("📥 PULL CLOUD", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color.White)
                         }
 
                         Button(
@@ -195,26 +208,11 @@ fun DataSynchronizationSettings(
                             shape = RoundedCornerShape(8.dp),
                             enabled = !isSyncing,
                             modifier = Modifier
-                                .weight(1.1f)
+                                .weight(0.95f)
                                 .height(46.dp)
                                 .testTag("btn_wipe_all_data")
                         ) {
-                            Text("🗑️ RESET DB", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                        }
-
-                        if (syncLogs.isNotEmpty()) {
-                            OutlinedButton(
-                                onClick = { viewModel.clearLogHistory() },
-                                colors = ButtonDefaults.outlinedButtonColors(contentColor = textSlateMuted),
-                                shape = RoundedCornerShape(8.dp),
-                                border = BorderStroke(1.dp, Color(0xFF1E293D)),
-                                modifier = Modifier
-                                    .weight(0.8f)
-                                    .height(46.dp)
-                                    .testTag("btn_clear_sync_logs")
-                            ) {
-                                Text("Clear", fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
-                            }
+                            Text("🗑️ RESET DB", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color.White)
                         }
                     }
 
@@ -234,13 +232,28 @@ fun DataSynchronizationSettings(
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text(
-                                    "DATA SYNC CONSOLE",
-                                    color = Color(0xFF64748B),
-                                    fontSize = 9.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
-                                )
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Text(
+                                        "DATA SYNC CONSOLE",
+                                        color = Color(0xFF64748B),
+                                        fontSize = 9.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+                                    )
+                                    Text(
+                                        "[CLEAR]",
+                                        color = primaryBlue,
+                                        fontSize = 9.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                                        modifier = Modifier
+                                            .clickable { viewModel.clearLogHistory() }
+                                            .testTag("btn_clear_sync_logs_text")
+                                    )
+                                }
                                 Text(
                                     if (isSyncing) "● EXECUTING..." else "● IDLE / COMPLETED",
                                     color = if (isSyncing) Color(0xFFF59E0B) else Color(0xFF10B981),

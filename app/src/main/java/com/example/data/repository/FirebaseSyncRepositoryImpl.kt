@@ -20,7 +20,8 @@ import javax.inject.Singleton
 
 @Singleton
 class FirebaseSyncRepositoryImpl @Inject constructor(
-    private val database: AppDatabase
+    private val appDatabase: AppDatabase,
+    private val collectionDatabase: com.example.data.local.CollectionDatabase
 ) : FirebaseSyncRepository {
 
     private val _syncEvents = MutableSharedFlow<String>(extraBufferCapacity = 64)
@@ -35,8 +36,8 @@ class FirebaseSyncRepositoryImpl @Inject constructor(
         withContext(Dispatchers.IO) {
             try {
                 // Perform the batch insert inside a single Room Transaction
-                database.withTransaction {
-                    val debtorDao = database.debtorDao()
+                appDatabase.withTransaction {
+                    val debtorDao = appDatabase.debtorDao()
                     debtorDao.insertDebtors(updatedList)
                 }
 
@@ -47,6 +48,210 @@ class FirebaseSyncRepositoryImpl @Inject constructor(
                 _syncEvents.emit("Sync Failed: ${e.localizedMessage}")
             }
         }
+    }
+
+    override suspend fun pullDataFromFirestore(
+        securitySettingsStore: com.example.domain.security.SecuritySettingsStore
+    ): Boolean = withContext(Dispatchers.IO) {
+        var overallSuccess = true
+        _syncEvents.emit("Restoration: Querying Cloud Backup...")
+        try {
+            val db = FirebaseFirestore.getInstance()
+
+            // 1. Clear local tables entirely
+            _syncEvents.emit("Local Clean: Dropping current database states...")
+            try {
+                appDatabase.clearAllTables()
+                collectionDatabase.clearAllTables()
+                _syncEvents.emit("Local Clean: Dropped current database states successfully.")
+            } catch (ex: Exception) {
+                _syncEvents.emit("Local Clean Warning: Could not clear local tables -> ${ex.localizedMessage}")
+            }
+
+            // 2. Fetch Debtors
+            _syncEvents.emit("Downloading Students debtors list...")
+            val debtorSnap = db.collection("debtors").get().await()
+            val debtors = mutableListOf<DebtorEntity>()
+            for (doc in debtorSnap.documents) {
+                if (doc.id == "_welcome_placeholder_") continue
+                try {
+                    val entity = DebtorEntity(
+                        id = doc.getString("id") ?: doc.id,
+                        name = doc.getString("name") ?: "Unknown",
+                        phoneNumber = doc.getString("phoneNumber") ?: "00000",
+                        alternativeNumber = doc.getString("alternativeNumber"),
+                        totalOverdueAmount = doc.getDouble("totalOverdueAmount") ?: 0.0,
+                        principalAmount = doc.getDouble("principalAmount") ?: 0.0,
+                        dpdBucket = doc.getString("dpdBucket") ?: "1-30",
+                        allocationDate = doc.getLong("allocationDate") ?: System.currentTimeMillis(),
+                        currentStatus = doc.getString("currentStatus") ?: "PENDING",
+                        contactNumber = doc.getString("contactNumber") ?: "00000",
+                        address = doc.getString("address") ?: "Default Address",
+                        outstandingAmount = doc.getDouble("outstandingAmount") ?: 0.0,
+                        lastContactDate = doc.getString("lastContactDate") ?: "0 days ago",
+                        customerSegment = doc.getString("customerSegment") ?: "Standard",
+                        college = doc.getString("college") ?: "Engineering",
+                        remarks = doc.getString("remarks") ?: "Restored record"
+                    )
+                    debtors.add(entity)
+                } catch (e: Exception) {
+                    android.util.Log.e("FirebaseSync", "Error parsing doc ${doc.id}", e)
+                }
+            }
+            if (debtors.isNotEmpty()) {
+                appDatabase.debtorDao().insertDebtors(debtors)
+                collectionDatabase.collectionDao().insertOrUpdateDebtors(debtors)
+                _syncEvents.emit("Restored ${debtors.size} student debtor records.")
+            } else {
+                _syncEvents.emit("No student records found on the Cloud to pull.")
+            }
+
+            // 3. Fetch Call Logs
+            _syncEvents.emit("Downloading Communication Logs...")
+            val callLogsSnap = db.collection("call_logs").get().await()
+            val callLogs = mutableListOf<CallLogEntity>()
+            for (doc in callLogsSnap.documents) {
+                if (doc.id == "_welcome_placeholder_") continue
+                try {
+                    val entity = CallLogEntity(
+                        id = doc.getString("id") ?: doc.id,
+                        callId = doc.getLong("callId") ?: 0L,
+                        debtorId = doc.getString("debtorId") ?: "",
+                        callTimestamp = doc.getLong("callTimestamp") ?: System.currentTimeMillis(),
+                        durationSeconds = doc.getLong("durationSeconds") ?: 0L,
+                        callType = doc.getString("callType") ?: "OUTGOING",
+                        callDisposition = doc.getString("callDisposition") ?: "No Answer",
+                        agentNotes = doc.getString("agentNotes"),
+                        recordingFilePath = doc.getString("recordingFilePath"),
+                        date = doc.getString("date") ?: "",
+                        time = doc.getString("time") ?: "",
+                        outcome = doc.getString("outcome") ?: "PENDING",
+                        notes = doc.getString("notes") ?: ""
+                    )
+                    callLogs.add(entity)
+                } catch (e: Exception) {
+                    android.util.Log.e("FirebaseSync", "Error parsing call log doc ${doc.id}", e)
+                }
+            }
+            if (callLogs.isNotEmpty()) {
+                val callLogDao = appDatabase.callLogDao()
+                val collectionDao = collectionDatabase.collectionDao()
+                for (log in callLogs) {
+                    callLogDao.insertCallLog(log)
+                    collectionDao.insertCallLog(log)
+                }
+                _syncEvents.emit("Restored ${callLogs.size} call disposition records.")
+            } else {
+                _syncEvents.emit("No call history records found on the Cloud.")
+            }
+
+            // 4. Fetch Promises to Pay
+            _syncEvents.emit("Downloading Payment Promises...")
+            val promisesSnap = db.collection("promises_to_pay").get().await()
+            val promises = mutableListOf<PromiseToPayEntity>()
+            for (doc in promisesSnap.documents) {
+                if (doc.id == "_welcome_placeholder_") continue
+                try {
+                    val entity = PromiseToPayEntity(
+                        ptpId = doc.getLong("ptpId") ?: System.currentTimeMillis(),
+                        debtorId = doc.getString("debtorId") ?: "",
+                        ptpCreationTimestamp = doc.getLong("ptpCreationTimestamp") ?: System.currentTimeMillis(),
+                        promisedPaymentDate = doc.getLong("promisedPaymentDate") ?: System.currentTimeMillis(),
+                        promisedAmount = doc.getDouble("promisedAmount") ?: 0.0,
+                        ptpStatus = doc.getString("ptpStatus") ?: "PENDING"
+                    )
+                    promises.add(entity)
+                } catch (e: Exception) {
+                    android.util.Log.e("FirebaseSync", "Error parsing promise to pay doc ${doc.id}", e)
+                }
+            }
+            if (promises.isNotEmpty()) {
+                val collectionDao = collectionDatabase.collectionDao()
+                for (ptp in promises) {
+                    collectionDao.insertOrUpdatePromiseToPay(ptp)
+                }
+                _syncEvents.emit("Restored ${promises.size} payment promise records.")
+            } else {
+                _syncEvents.emit("No payment promise records found on the Cloud.")
+            }
+
+            // 5. Fetch Telecallers Agent Matrix
+            _syncEvents.emit("Downloading Telecaller Matrix...")
+            val telecallersSnap = db.collection("telecallers").get().await()
+            val agents = mutableListOf<TelecallerAgent>()
+            for (doc in telecallersSnap.documents) {
+                if (doc.id == "_welcome_placeholder_") continue
+                try {
+                    val id = doc.getString("id") ?: doc.id
+                    val name = doc.getString("name") ?: "Unknown"
+                    val isOnline = doc.getBoolean("isOnline") ?: false
+                    val callsDialed = doc.getLong("callsDialed")?.toInt() ?: 0
+                    val talkTimeMinutes = doc.getLong("talkTimeMinutes")?.toInt() ?: 0
+                    val ptpsSecured = doc.getLong("ptpsSecured")?.toInt() ?: 0
+                    val targetAmount = doc.getDouble("targetAmount") ?: 150000.0
+                    val isDisabled = doc.getBoolean("isDisabled") ?: false
+                    
+                    val permMap = doc.get("permissions") as? Map<String, Any>
+                    val permissions = com.example.domain.security.AgentPermissions(
+                        callInitiation = permMap?.get("callInitiation") as? Boolean ?: true,
+                        canSeeFullNumbers = permMap?.get("canSeeFullNumbers") as? Boolean ?: false,
+                        canPerformPurge = permMap?.get("canPerformPurge") as? Boolean ?: false,
+                        canRecordAudio = permMap?.get("canRecordAudio") as? Boolean ?: true,
+                        isAdmin = permMap?.get("isAdmin") as? Boolean ?: false
+                    )
+                    
+                    val agent = TelecallerAgent(
+                        id = id,
+                        name = name,
+                        isOnline = isOnline,
+                        callsDialed = callsDialed,
+                        talkTimeMinutes = talkTimeMinutes,
+                        ptpsSecured = ptpsSecured,
+                        targetAmount = targetAmount,
+                        permissions = permissions,
+                        isDisabled = isDisabled
+                    )
+                    agents.add(agent)
+                } catch (e: Exception) {
+                    android.util.Log.e("FirebaseSync", "Error parsing agent doc ${doc.id}", e)
+                }
+            }
+            if (agents.isNotEmpty()) {
+                withContext(Dispatchers.Main) {
+                    securitySettingsStore.restoreTelecallersList(agents)
+                }
+                _syncEvents.emit("Restored ${agents.size} telecaller agent profiles.")
+            } else {
+                _syncEvents.emit("No active telecallers found in cloud backup.")
+            }
+
+            // 6. Fetch Security / Compliance Policies
+            _syncEvents.emit("Downloading Security Audit Policies...")
+            val policyDoc = db.collection("security_settings_audit").document("current_policies").get().await()
+            if (policyDoc.exists()) {
+                val isNumberMaskingEnabled = policyDoc.getBoolean("isNumberMaskingEnabled") ?: true
+                val isHardwareBindingEnabled = policyDoc.getBoolean("isHardwareBindingEnabled") ?: false
+                val isScreenshotBlockEnabled = policyDoc.getBoolean("isScreenshotBlockEnabled") ?: false
+                val themeMode = policyDoc.getString("themeMode") ?: "system"
+                
+                withContext(Dispatchers.Main) {
+                    securitySettingsStore.restoreSettings(
+                        numberMasking = isNumberMaskingEnabled,
+                        hardwareBinding = isHardwareBindingEnabled,
+                        screenshotBlock = isScreenshotBlockEnabled,
+                        theme = themeMode
+                    )
+                }
+                _syncEvents.emit("Restored latest dynamic security policy rules.")
+            }
+            
+            _syncEvents.emit("SUCCESS: Deep restoration completed! Local databases and cloud states are fully synced.")
+        } catch (e: Exception) {
+            overallSuccess = false
+            _syncEvents.emit("ERROR: Restoration halted -> ${e.localizedMessage}")
+            android.util.Log.e("FirebaseSync", "Complete restore error", e)
+        }
+        overallSuccess
     }
 
     override suspend fun pushAllDataToFirestore(
@@ -69,6 +274,7 @@ class FirebaseSyncRepositoryImpl @Inject constructor(
         // 1. Sync Debtors Collection (Students)
         try {
             _syncEvents.emit("Category 1/7: Uploading Student Debtors portfolio (${debtors.size} items)...")
+            clearFirestoreCollection(db, "debtors")
             val debtorCollection = db.collection("debtors")
             if (debtors.isNotEmpty()) {
                 val batchChunks = debtors.chunked(500)
@@ -115,6 +321,7 @@ class FirebaseSyncRepositoryImpl @Inject constructor(
         // 2. Sync Call Logs Collection
         try {
             _syncEvents.emit("Category 2/7: Uploading Communication Logs (${callLogs.size} items)...")
+            clearFirestoreCollection(db, "call_logs")
             val callLogsCollection = db.collection("call_logs")
             if (callLogs.isNotEmpty()) {
                 val batchChunks = callLogs.chunked(500)
@@ -160,6 +367,7 @@ class FirebaseSyncRepositoryImpl @Inject constructor(
         // 3. Sync Promises to Pay Collection
         try {
             _syncEvents.emit("Category 3/7: Uploading Payment Commitments / PTP (${promises.size} items)...")
+            clearFirestoreCollection(db, "promises_to_pay")
             val ptpCollection = db.collection("promises_to_pay")
             if (promises.isNotEmpty()) {
                 val batchChunks = promises.chunked(500)
@@ -198,6 +406,7 @@ class FirebaseSyncRepositoryImpl @Inject constructor(
         // 4. Sync Telecaller Profiles Collection
         try {
             _syncEvents.emit("Category 4/7: Backing up Telecaller Profile Matrix (${agents.size} items)...")
+            clearFirestoreCollection(db, "telecallers")
             val telecallersCollection = db.collection("telecallers")
             if (agents.isNotEmpty()) {
                 val batchChunks = agents.chunked(500)
@@ -272,6 +481,7 @@ class FirebaseSyncRepositoryImpl @Inject constructor(
         val groupedLogs = callLogs.groupBy { Pair(it.agentId, it.callDisposition) }
         try {
             _syncEvents.emit("Category 7/7: Organizing Telecaller and Remarks-wise Grouped Sync...")
+            clearFirestoreTelecallerRemarksWise(db)
             val teleRemarksCollection = db.collection("telecaller_remarks_wise")
 
             if (groupedLogs.isNotEmpty()) {
@@ -343,6 +553,16 @@ class FirebaseSyncRepositoryImpl @Inject constructor(
                 _syncEvents.emit("RTDB Warning: Realtime Database module is unconfigured. Mirror check skipped.")
             } else {
                 val rtdbRef = rtdb.reference
+                _syncEvents.emit("RTDB: Dropping existing mirrored tables...")
+                try {
+                    rtdbRef.child("debtors").removeValue().await()
+                    rtdbRef.child("call_logs").removeValue().await()
+                    rtdbRef.child("promises_to_pay").removeValue().await()
+                    rtdbRef.child("telecallers").removeValue().await()
+                    rtdbRef.child("telecaller_remarks_wise").removeValue().await()
+                } catch (e: Exception) {
+                    android.util.Log.e("FirebaseSync", "Error clearing RTDB nodes", e)
+                }
 
                 // Helper function to sanitize RTDB path keys to avoid syntax crashes
                 fun sanitizeKey(key: String): String {
@@ -534,5 +754,33 @@ class FirebaseSyncRepositoryImpl @Inject constructor(
             _syncEvents.emit("WARNING: Category-wise Cloud Sync completed with issues.")
         }
         overallSuccess
+    }
+
+    private suspend fun clearFirestoreCollection(db: FirebaseFirestore, collectionName: String) {
+        try {
+            val colRef = db.collection(collectionName)
+            val snapshot = colRef.get().await()
+            for (doc in snapshot.documents) {
+                colRef.document(doc.id).delete().await()
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("FirebaseSync", "Error clearing Firestore collection: $collectionName", e)
+        }
+    }
+
+    private suspend fun clearFirestoreTelecallerRemarksWise(db: FirebaseFirestore) {
+        try {
+            val colRef = db.collection("telecaller_remarks_wise")
+            val snapshot = colRef.get().await()
+            for (doc in snapshot.documents) {
+                val subSnapshot = colRef.document(doc.id).collection("calls").get().await()
+                for (subDoc in subSnapshot.documents) {
+                    colRef.document(doc.id).collection("calls").document(subDoc.id).delete().await()
+                }
+                colRef.document(doc.id).delete().await()
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("FirebaseSync", "Error clearing telecaller_remarks_wise subcollections", e)
+        }
     }
 }

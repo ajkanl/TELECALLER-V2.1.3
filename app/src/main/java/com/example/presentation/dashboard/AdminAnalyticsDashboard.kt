@@ -21,6 +21,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -76,6 +77,10 @@ fun AdminAnalyticsDashboard(
     val telecallers by viewModel.telecallersList.collectAsState()
     val rawDebtorsList by homeViewModel.debtors.collectAsState()
     val isNumberMaskingGlobal by viewModel.isNumberMaskingEnabled.collectAsState()
+
+    val recentCallsList by homeViewModel.recentCalls.collectAsState(initial = emptyList())
+    val aiPortfolioAnalysis by homeViewModel.aiPortfolioAnalysisState.collectAsState()
+    val isGeneratingPortfolioAnalysis by homeViewModel.isGeneratingPortfolioAnalysis.collectAsState()
 
     // Dialog state for adding a new agent
     var showAddAgentDialog by remember { mutableStateOf(false) }
@@ -246,20 +251,26 @@ fun AdminAnalyticsDashboard(
                 Tab(
                     selected = selectedTab == 0,
                     onClick = { selectedTab = 0 },
-                    text = { Text("📊 Telemetry", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = if (selectedTab == 0) accentBlue else textSecondary) },
+                    text = { Text("📊 Telemetry", fontWeight = FontWeight.Bold, fontSize = 11.sp, color = if (selectedTab == 0) accentBlue else textSecondary) },
                     modifier = Modifier.testTag("admin_tab_telemetry")
                 )
                 Tab(
                     selected = selectedTab == 1,
                     onClick = { selectedTab = 1 },
-                    text = { Text("👥 Agent Control", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = if (selectedTab == 1) accentBlue else textSecondary) },
+                    text = { Text("👥 Agents", fontWeight = FontWeight.Bold, fontSize = 11.sp, color = if (selectedTab == 1) accentBlue else textSecondary) },
                     modifier = Modifier.testTag("admin_tab_agents")
                 )
                 Tab(
                     selected = selectedTab == 2,
                     onClick = { selectedTab = 2 },
-                    text = { Text("🔍 Student Lookup", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = if (selectedTab == 2) accentBlue else textSecondary) },
+                    text = { Text("🔍 Lookup", fontWeight = FontWeight.Bold, fontSize = 11.sp, color = if (selectedTab == 2) accentBlue else textSecondary) },
                     modifier = Modifier.testTag("admin_tab_search")
+                )
+                Tab(
+                    selected = selectedTab == 3,
+                    onClick = { selectedTab = 3 },
+                    text = { Text("✨ AI Core", fontWeight = FontWeight.Bold, fontSize = 11.sp, color = if (selectedTab == 3) accentBlue else textSecondary) },
+                    modifier = Modifier.testTag("admin_tab_ai_copilot")
                 )
             }
 
@@ -900,8 +911,10 @@ fun AdminAnalyticsDashboard(
                                                             onClick = {
                                                                 // Link the case directly to Rajesh Kumar (or Aditi dynamically based on DPD)
                                                                 val handlerName = if (student.overdueDays > 30) "Aditi Verma" else "Rajesh Kumar"
-                                                                val matchingAgent = telecallers.find { it.name == handlerName } ?: telecallers.first()
-                                                                viewModel.setImpersonatedAgent(matchingAgent)
+                                                                val matchingAgent = telecallers.find { it.name == handlerName } ?: telecallers.firstOrNull()
+                                                                if (matchingAgent != null) {
+                                                                    viewModel.setImpersonatedAgent(matchingAgent)
+                                                                }
                                                             },
                                                             colors = ButtonDefaults.buttonColors(containerColor = accentGreen),
                                                             shape = RoundedCornerShape(6.dp),
@@ -913,6 +926,205 @@ fun AdminAnalyticsDashboard(
                                                 }
                                             }
                                         }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    3 -> { // --- TAB 3: GEMINI AI PORTFOLIO AUDITOR & EXECUTIVE STRATEGIST ---
+                        val totalOutstandingAmt = remember(rawDebtorsList) { rawDebtorsList.sumOf { it.outstandingAmount } }
+                        val ptpCount = remember(rawDebtorsList) { rawDebtorsList.count { it.customerSegment.contains("PTP", ignoreCase = true) || it.customerSegment.contains("Promise", ignoreCase = true) } }
+                        
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .verticalScroll(rememberScrollState())
+                                .padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            Card(
+                                shape = RoundedCornerShape(24.dp),
+                                colors = CardDefaults.cardColors(containerColor = Color(0xFF131B2A)),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .border(1.dp, Color(0xFF1E293D), RoundedCornerShape(24.dp))
+                            ) {
+                                Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Row(
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Star,
+                                                contentDescription = "AI Auditor Star",
+                                                tint = Color(0xFF38BDF8),
+                                                modifier = Modifier.size(24.dp)
+                                            )
+                                            Text(
+                                                text = "EXECUTIVE PORTFOLIO ANALYTICS",
+                                                fontSize = 12.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = Color(0xFF38BDF8),
+                                                letterSpacing = 0.5.sp
+                                            )
+                                        }
+
+                                        if (isGeneratingPortfolioAnalysis) {
+                                            CircularProgressIndicator(
+                                                modifier = Modifier.size(20.dp),
+                                                color = Color(0xFF38BDF8),
+                                                strokeWidth = 2.dp
+                                            )
+                                        } else {
+                                            Button(
+                                                onClick = {
+                                                    val recentSummaryText = recentCallsList.take(15).joinToString("\n") { log ->
+                                                        "- ${log.debtorName}: ${log.notes} (${log.status})"
+                                                    }
+                                                    homeViewModel.generatePortfolioAnalysis(
+                                                        debtorsCount = rawDebtorsList.size,
+                                                        totalOutstanding = totalOutstandingAmt,
+                                                        activePtpCount = ptpCount,
+                                                        recentLogsSummary = recentSummaryText
+                                                    )
+                                                },
+                                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0EA5E9)),
+                                                shape = RoundedCornerShape(12.dp)
+                                            ) {
+                                                Text("✨ Run Executive Review", fontWeight = FontWeight.Bold, color = Color.White, fontSize = 11.sp)
+                                            }
+                                        }
+                                    }
+
+                                    Text(
+                                        text = "Processes the whole loan ledger to generate recovery risk scoreboards, spot recovery leakages, check agent efficiency under simulated scenarios, and draft bullet recommendations.",
+                                        fontSize = 12.sp,
+                                        color = textSecondary
+                                    )
+
+                                    HorizontalDivider(color = Color(0xFF1E293D), thickness = 1.dp)
+
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                    ) {
+                                        Column(
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .clip(RoundedCornerShape(12.dp))
+                                                .background(Color(0xFF0F172A))
+                                                .padding(10.dp),
+                                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                                        ) {
+                                            Text("LEDGER EXPOSURE", fontSize = 9.sp, color = textSecondary, fontWeight = FontWeight.Bold)
+                                            Text("₹${"%,.2f".format(totalOutstandingAmt)}", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFFEF4444))
+                                        }
+                                        
+                                        Column(
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .clip(RoundedCornerShape(12.dp))
+                                                .background(Color(0xFF0F172A))
+                                                .padding(10.dp),
+                                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                                        ) {
+                                            Text("TOTAL CLIENTS", fontSize = 9.sp, color = textSecondary, fontWeight = FontWeight.Bold)
+                                            Text("${rawDebtorsList.size} cases", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = textDark)
+                                        }
+
+                                        Column(
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .clip(RoundedCornerShape(12.dp))
+                                                .background(Color(0xFF0F172A))
+                                                .padding(10.dp),
+                                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                                        ) {
+                                            Text("ACTIVE PROMISES", fontSize = 9.sp, color = textSecondary, fontWeight = FontWeight.Bold)
+                                            Text("$ptpCount commitments", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFF10B981))
+                                        }
+                                    }
+                                }
+                            }
+
+                            if (aiPortfolioAnalysis != null) {
+                                Card(
+                                    shape = RoundedCornerShape(24.dp),
+                                    colors = CardDefaults.cardColors(containerColor = Color(0xFF131B2A)),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .border(1.dp, Color(0xFF38BDF8).copy(alpha = 0.4f), RoundedCornerShape(24.dp))
+                                ) {
+                                    Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Text(
+                                                text = "🛡️ GEMINI CO-PILOT ADVISORY REPORT",
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 12.sp,
+                                                color = Color(0xFF38BDF8),
+                                                letterSpacing = 0.5.sp
+                                            )
+                                            TextButton(onClick = { homeViewModel.clearPortfolioAnalysis() }) {
+                                                Text("Reset Report", style = MaterialTheme.typography.labelSmall, color = textSecondary)
+                                            }
+                                        }
+
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .clip(RoundedCornerShape(16.dp))
+                                                .background(Color(0xFF0F172A))
+                                                .border(1.dp, Color(0xFF334155), RoundedCornerShape(16.dp))
+                                                .padding(14.dp)
+                                        ) {
+                                            Text(
+                                                text = aiPortfolioAnalysis!!,
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                color = textDark
+                                            )
+                                        }
+                                    }
+                                }
+                            } else {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(200.dp)
+                                        .clip(RoundedCornerShape(24.dp))
+                                        .background(Color(0xFF131B2A))
+                                        .border(1.dp, Color(0xFF1E293D), RoundedCornerShape(24.dp)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Column(
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Star,
+                                            contentDescription = null,
+                                            tint = Color(0xFF1E293D).copy(alpha = 0.5f),
+                                            modifier = Modifier.size(48.dp)
+                                        )
+                                        Text(
+                                            text = "Advisory report not generated yet.",
+                                            color = textSecondary,
+                                            fontSize = 13.sp,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                        Text(
+                                            text = "Click 'Run Executive Review' above to start.",
+                                            color = textSecondary.copy(alpha = 0.6f),
+                                            fontSize = 11.sp
+                                        )
                                     }
                                 }
                             }

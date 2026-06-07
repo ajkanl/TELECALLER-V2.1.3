@@ -53,6 +53,7 @@ class DataSyncViewModel @Inject constructor(
     private val store: DataSyncSettingsStore,
     private val firebaseSyncRepository: FirebaseSyncRepository,
     private val database: AppDatabase,
+    private val collectionDatabase: com.example.data.local.CollectionDatabase,
     private val securitySettingsStore: SecuritySettingsStore
 ) : ViewModel() {
 
@@ -229,6 +230,22 @@ class DataSyncViewModel @Inject constructor(
         }
     }
 
+    fun triggerCategoryWisePullFromCloud() {
+        if (_isSyncingToCloud.value) return
+        _isSyncingToCloud.value = true
+        _syncStatusLogs.value = emptyList()
+
+        viewModelScope.launch {
+            try {
+                firebaseSyncRepository.pullDataFromFirestore(securitySettingsStore)
+            } catch (e: Exception) {
+                _syncStatusLogs.update { current -> current + "ERROR: General failure in cloud pull -> ${e.localizedMessage}" }
+            } finally {
+                _isSyncingToCloud.value = false
+            }
+        }
+    }
+
     fun wipeAllLocalAndCloudDataDirect() {
         if (_isSyncingToCloud.value) return
         _isSyncingToCloud.value = true
@@ -241,6 +258,7 @@ class DataSyncViewModel @Inject constructor(
                 // Clear all local database tables in Room
                 kotlinx.coroutines.withContext(Dispatchers.IO) {
                     database.clearAllTables()
+                    collectionDatabase.clearAllTables()
                 }
                 _syncStatusLogs.update { current -> current + "SUCCESS: All localized databases cleared of records." }
                 _syncStatusLogs.update { current -> current + "Syncing clean, empty slate to Cloud Firestore collections..." }

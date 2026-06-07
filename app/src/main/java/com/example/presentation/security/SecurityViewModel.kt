@@ -10,6 +10,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
@@ -98,11 +99,78 @@ class SecurityViewModel @Inject constructor(
     }
 
     /**
-     * Instantly clear all local SQLite databases and terminate session via AuthRepository logout.
+     * Instantly clear all local SQLite databases, remove remote Firestore/RTDB records, and terminate session via AuthRepository logout.
      */
     fun executeEmergencyPurge(onComplete: () -> Unit) {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
+                // 1. Delete Firestore collections completely
+                try {
+                    val db = com.google.firebase.firestore.FirebaseFirestore.getInstance()
+                    val collections = listOf(
+                        "debtors",
+                        "call_logs",
+                        "promises_to_pay",
+                        "telecallers",
+                        "security_settings_audit",
+                        "sync_settings_audit",
+                        "telecaller_remarks_wise",
+                        "authorized_users"
+                    )
+                    for (colName in collections) {
+                        try {
+                            if (colName == "telecaller_remarks_wise") {
+                                val snapshot = db.collection(colName).get().await()
+                                for (doc in snapshot.documents) {
+                                    val subSnapshot = db.collection(colName).document(doc.id).collection("calls").get().await()
+                                    for (subDoc in subSnapshot.documents) {
+                                        db.collection(colName).document(doc.id).collection("calls").document(subDoc.id).delete().await()
+                                    }
+                                    db.collection(colName).document(doc.id).delete().await()
+                                }
+                            } else {
+                                val snapshot = db.collection(colName).get().await()
+                                for (doc in snapshot.documents) {
+                                    db.collection(colName).document(doc.id).delete().await()
+                                }
+                            }
+                            android.util.Log.d("SecurityViewModel", "Cleared Firestore collection: $colName")
+                        } catch (ex: Exception) {
+                            android.util.Log.e("SecurityViewModel", "Failed to clear Firestore collection $colName: ${ex.message}", ex)
+                        }
+                    }
+                } catch (e: Exception) {
+                    android.util.Log.e("SecurityViewModel", "Could not purge Firestore data", e)
+                }
+
+                // 2. Delete Google Firebase Realtime Database node structures
+                try {
+                    val rtdb = com.example.data.util.FirebaseDatabaseConnector.getInstance()
+                    if (rtdb != null) {
+                        val children = listOf(
+                            "debtors",
+                            "call_logs",
+                            "promises_to_pay",
+                            "telecallers",
+                            "security_settings_audit",
+                            "sync_settings_audit",
+                            "telecaller_remarks_wise",
+                            "authorized_users"
+                        )
+                        for (child in children) {
+                            try {
+                                rtdb.getReference(child).removeValue().await()
+                                android.util.Log.d("SecurityViewModel", "Cleared RTDB child: $child")
+                            } catch (ex: Exception) {
+                                android.util.Log.e("SecurityViewModel", "Failed to clear RTDB child $child: ${ex.message}", ex)
+                            }
+                        }
+                    }
+                } catch (e: Exception) {
+                    android.util.Log.e("SecurityViewModel", "Could not purge RTDB data", e)
+                }
+
+                // 3. Clear local databases
                 try {
                     // Instantly clear all tables as required
                     appDatabase.clearAllTables()
@@ -111,6 +179,7 @@ class SecurityViewModel @Inject constructor(
                     e.printStackTrace()
                 }
             }
+            securitySettingsStore.resetToZero()
             authRepository.logout()
             onComplete()
         }

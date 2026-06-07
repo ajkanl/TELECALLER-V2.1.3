@@ -53,15 +53,7 @@ class SecuritySettingsStore @Inject constructor() {
     val activeImpersonatedAgent: StateFlow<TelecallerAgent?> = _activeImpersonatedAgent.asStateFlow()
 
     // --- NEW: Dynamic Telecaller Agents & Permission Management ---
-    private val _telecallersList = MutableStateFlow(
-        listOf(
-            TelecallerAgent("T01", "Rajesh Kumar", true, 142, 272, 28, permissions = AgentPermissions(callInitiation = true, canSeeFullNumbers = true, canRecordAudio = true, isAdmin = true)),
-            TelecallerAgent("T02", "Aditi Verma", true, 128, 235, 24, permissions = AgentPermissions(callInitiation = true, canSeeFullNumbers = false, canRecordAudio = true, isAdmin = false)),
-            TelecallerAgent("T03", "Aarav Patel", false, 95, 160, 15, permissions = AgentPermissions(callInitiation = false, canSeeFullNumbers = false, canRecordAudio = false, isAdmin = false)),
-            TelecallerAgent("T04", "Neha Sharma", true, 118, 195, 19, permissions = AgentPermissions(callInitiation = true, canSeeFullNumbers = false, canRecordAudio = true, isAdmin = false)),
-            TelecallerAgent("T05", "Kabir Singh", false, 110, 182, 17, permissions = AgentPermissions(callInitiation = true, canSeeFullNumbers = true, canRecordAudio = false, isAdmin = false))
-        )
-    )
+    private val _telecallersList = MutableStateFlow<List<TelecallerAgent>>(emptyList())
     val telecallersList: StateFlow<List<TelecallerAgent>> = _telecallersList.asStateFlow()
 
     fun toggleNumberMasking(enabled: Boolean) {
@@ -252,5 +244,29 @@ class SecuritySettingsStore @Inject constructor() {
                 }
             }
         }
+    }
+
+    fun resetToZero() {
+        _telecallersList.value = emptyList()
+        _activeImpersonatedAgent.value = null
+        _isNumberMaskingEnabled.value = true
+        _isHardwareBindingEnabled.value = false
+        _isScreenshotBlockEnabled.value = false
+    }
+
+    fun restoreTelecallersList(list: List<TelecallerAgent>) {
+        _telecallersList.value = list
+    }
+
+    fun restoreSettings(
+        numberMasking: Boolean,
+        hardwareBinding: Boolean,
+        screenshotBlock: Boolean,
+        theme: String
+    ) {
+        _isNumberMaskingEnabled.value = numberMasking
+        _isHardwareBindingEnabled.value = hardwareBinding
+        _isScreenshotBlockEnabled.value = screenshotBlock
+        _themeMode.value = theme
     }
 }
